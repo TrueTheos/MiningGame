@@ -8,6 +8,7 @@ public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private float _speed = 8f;
     [SerializeField] private float _jumpingPower = 16f;
+    [SerializeField] private float _climbSpeed;
 
     private Rigidbody2D _rb;
     [SerializeField] private Transform _groundCheck;
@@ -15,6 +16,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private LayerMask _groundLayer;
 
     private float _horizontal;
+    private float _vertical;
     private bool _isFacingRight = true;
     private bool _isJumping;
     private float _coyoteTime = 0.1f;
@@ -23,14 +25,26 @@ public class PlayerMovement : MonoBehaviour
     private float _jumpBufferTime = 0.2f;
     private float _jumpBufferCounter;
 
+    private bool _isOnClimbable;
+    private bool _isClimbing;
+
+    private float _originalGravityScale;
+
     private void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
+        _originalGravityScale = _rb.gravityScale;
     }
 
     void Update()
     {
         _horizontal = Input.GetAxisRaw("Horizontal");
+        _vertical = Input.GetAxisRaw("Vertical");
+
+        if (_isOnClimbable && Mathf.Abs(_vertical) > 0f)
+        {
+            _isClimbing = true;
+        }
 
         if (IsGrounded())
         {
@@ -71,7 +85,17 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        _rb.velocity = new Vector2(_horizontal * _speed, _rb.velocity.y);
+        if (_isClimbing)
+        {
+            _rb.gravityScale = 0f;
+            _rb.velocity = new Vector2(_horizontal * _speed, _vertical * _climbSpeed);
+        }
+        else
+        {
+            _rb.gravityScale = _originalGravityScale;
+            _rb.velocity = new Vector2(_horizontal * _speed, _rb.velocity.y);
+        }
+
         _animator.SetFloat("Movement", Mathf.Abs(_rb.velocity.x));
     }
 
@@ -95,6 +119,23 @@ public class PlayerMovement : MonoBehaviour
             Vector3 localScale = transform.localScale;
             localScale.x *= -1f;
             transform.localScale = localScale;
+        }
+    }
+
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (collision.tag == "Climbable")
+        {
+            _isOnClimbable = true;
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.tag == "Climbable")
+        {
+            _isOnClimbable = false;
+            _isClimbing = false;
         }
     }
 }

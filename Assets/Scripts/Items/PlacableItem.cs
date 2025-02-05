@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 [System.Flags]
@@ -10,7 +11,8 @@ public enum PlacementType
     Ground = 2,
     Wall = 4,
     Ceiling = 8,
-    NeedsSupport = 16
+    NeedsSupport = 16,
+    SameType = 32
 }
 
 public abstract class PlacableItem : Item
@@ -58,7 +60,10 @@ public abstract class PlacableItem : Item
     public void DestroyIfInvalid()
     {
         if (!destroyWhenSupportDestroyed) return;
-        if(!IsPlacementValid(Pos.x, Pos.y)) Destroy(gameObject);
+        if (!IsPlacementValid(Pos.x, Pos.y))
+        {
+            OnBreak();
+        }
     }
 
     public bool IsPlacementValid(int x, int y)
@@ -87,7 +92,9 @@ public abstract class PlacableItem : Item
         if (botTile != null && botTile.Solid) return true;
 
         var botBuilding = WorldManager.Instance.Buildings[x, y - 1];
-        if (botBuilding != null && botBuilding.Solid) return true;
+        if (botBuilding != null && (botBuilding.Solid ||
+            (allowedPlacements.HasFlag(PlacementType.SameType) && botBuilding.GetType() == this.GetType())))
+            return true;
 
         return false;
     }
@@ -100,9 +107,14 @@ public abstract class PlacableItem : Item
         if (rightTile != null && rightTile.Solid) return true;
 
         var leftBuilding = WorldManager.Instance.Buildings[x - 1, y];
-        if (leftBuilding != null && leftBuilding.Solid) return true;
+        if (leftBuilding != null && (leftBuilding.Solid ||
+            (allowedPlacements.HasFlag(PlacementType.SameType) && leftBuilding.GetType() == this.GetType())))
+            return true;
+
         var rightBuilding = WorldManager.Instance.Buildings[x + 1, y];
-        if (rightBuilding != null && rightBuilding.Solid) return true;
+        if (rightBuilding != null && (rightBuilding.Solid ||
+            (allowedPlacements.HasFlag(PlacementType.SameType) && rightBuilding.GetType() == this.GetType())))
+            return true;
 
         return false;
     }
@@ -113,8 +125,9 @@ public abstract class PlacableItem : Item
         if (topTile != null && topTile.Solid) return true;
 
         var topBuilding = WorldManager.Instance.Buildings[x, y + 1];
-        if (topBuilding != null && topBuilding.Solid) return true;
-
+        if (topBuilding != null && (topBuilding.Solid ||
+            (allowedPlacements.HasFlag(PlacementType.SameType) && topBuilding.GetType() == this.GetType())))
+            return true;
         return false;
     }
 
