@@ -10,6 +10,7 @@ public class TileSO : ScriptableObject
     public int Durability;
     public Sprite Art;
     public TileBase Tile;
+    public bool Solid;
     public List<Color> ParticleColors = new();
     //public List<Item> drops;
 }

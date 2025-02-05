@@ -15,7 +15,13 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private LayerMask _groundLayer;
 
     private float _horizontal;
-    private bool isFacingRight = true;
+    private bool _isFacingRight = true;
+    private bool _isJumping;
+    private float _coyoteTime = 0.1f;
+    private float _coyoteTimeCounter;
+
+    private float _jumpBufferTime = 0.2f;
+    private float _jumpBufferCounter;
 
     private void Awake()
     {
@@ -26,14 +32,38 @@ public class PlayerMovement : MonoBehaviour
     {
         _horizontal = Input.GetAxisRaw("Horizontal");
 
-        if (Input.GetButtonDown("Jump") && IsGrounded())
+        if (IsGrounded())
+        {
+            _coyoteTimeCounter = _coyoteTime;
+        }
+        else
+        {
+            _coyoteTimeCounter -= Time.deltaTime;
+        }
+
+        if (Input.GetButtonDown("Jump"))
+        {
+            _jumpBufferCounter = _jumpBufferTime;
+        }
+        else
+        {
+            _jumpBufferCounter -= Time.deltaTime;
+        }
+
+        if (_coyoteTimeCounter > 0f && _jumpBufferCounter > 0f && !_isJumping)
         {
             _rb.velocity = new Vector2(_rb.velocity.x, _jumpingPower);
+
+            _jumpBufferCounter = 0f;
+
+            StartCoroutine(JumpCooldown());
         }
 
         if (Input.GetButtonUp("Jump") && _rb.velocity.y > 0f)
         {
             _rb.velocity = new Vector2(_rb.velocity.x, _rb.velocity.y * 0.5f);
+
+            _coyoteTimeCounter = 0f;
         }
 
         Flip();
@@ -50,11 +80,18 @@ public class PlayerMovement : MonoBehaviour
         return Physics2D.OverlapCircle(_groundCheck.position, 0.2f, _groundLayer);
     }
 
+    private IEnumerator JumpCooldown()
+    {
+        _isJumping = true;
+        yield return new WaitForSeconds(0.4f);
+        _isJumping = false;
+    }
+
     private void Flip()
     {
-        if (isFacingRight && _horizontal < 0f || !isFacingRight && _horizontal > 0f)
+        if (_isFacingRight && _horizontal < 0f || !_isFacingRight && _horizontal > 0f)
         {
-            isFacingRight = !isFacingRight;
+            _isFacingRight = !_isFacingRight;
             Vector3 localScale = transform.localScale;
             localScale.x *= -1f;
             transform.localScale = localScale;

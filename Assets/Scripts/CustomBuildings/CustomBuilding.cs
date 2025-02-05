@@ -2,31 +2,29 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TileBuildableItem : PlacableItem
+public class CustomBuilding : PlacableItem
 {
-    public TileSO Tile;
-
-    private void Start()
-    {
-        Art.sprite = Tile.Art;
-    }
+    public bool Solid;
+    public int Durability;
 
     public override void UseOnce()
     {
         var pos = MousePosToTilePos();
         Place(pos.x, pos.y);
     }
-     
+
     public override bool CanPlace(int x, int y)
     {
-        return WorldManager.Instance.GetTileAtMousePos() == null && WorldManager.Instance.GetBuildingAtMousePos() == null;
+        return WorldManager.Instance.GetTileAtMousePos() == null &&
+            WorldManager.Instance.GetBuildingAtMousePos() == null &&
+            IsPlacementValid(x, y);
     }
 
     public override void Place(int x, int y)
     {
         if (!CanPlace(x, y)) return;
 
-        WorldManager.Instance.PlaceTile(x, y, Tile);
+        WorldManager.Instance.PlaceBuilding(x, y, this);
         Inventory.Instance.RemoveOne();
     }
 }

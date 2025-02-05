@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class LightManager : MonoBehaviour
 {
+    public static LightManager Instance;
+
     private WorldManager _worldManager;
 
     [SerializeField] private int _tileSize = 8;
@@ -15,6 +17,7 @@ public class LightManager : MonoBehaviour
     [SerializeField] private GameObject _player;
 
     private float[,] _lightMap;
+    private Dictionary<Vector2Int, float> _persistentLights = new Dictionary<Vector2Int, float>();
     private Texture2D _lightTexture;
     private SpriteRenderer _lightRenderer;
     private Camera _mainCamera;
@@ -22,6 +25,11 @@ public class LightManager : MonoBehaviour
     private int _worldWidth => _worldManager.WorldWidth;
     private int _worldHeight => _worldManager.WorldHeight;
     private int _textureWidth, _textureHeight;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -83,9 +91,45 @@ public class LightManager : MonoBehaviour
         ApplyLightingToTexture();
     }
 
+    public void AddLight(int x, int y, float power)
+    {
+        Vector2Int position = new Vector2Int(x, y);
+        if (_persistentLights.ContainsKey(position))
+        {
+            _persistentLights[position] = Mathf.Max(_persistentLights[position], power);
+        }
+        else
+        {
+            _persistentLights.Add(position, power);
+        }
+    }
+
+    public void RemoveLight(int x, int y)
+    {
+        Vector2Int position = new Vector2Int(x, y);
+        if (_persistentLights.ContainsKey(position))
+        {
+            _persistentLights.Remove(position);
+        }
+    }
+
     void ComputeLightForTile(int x, int y, Vector2 playerPos)
     {
         float light = 0f;
+
+        Vector2Int currentTile = new Vector2Int(x, y);
+        foreach (var lightSource in _persistentLights)
+        {
+            float dist = Vector2.Distance(currentTile, lightSource.Key);
+            if (dist < lightSource.Value * 2) // Light radius is twice the power
+            {
+                // Check line of sight to the light source
+                bool visible = HasLineOfSight(lightSource.Key.x, lightSource.Key.y, x, y);
+                float intensityMultiplier = visible ? 1f : _wallLightLoseRate;
+                float sourceLight = lightSource.Value * (1f - (dist / (lightSource.Value * 2))) * intensityMultiplier;
+                light = Mathf.Max(light, sourceLight);
+            }
+        }
 
         // Player light (compute center-based distance)
         if (_player != null)

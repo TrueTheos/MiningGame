@@ -16,6 +16,7 @@ MonoBehaviour:
   Durability: 3
   Art: {fileID: -1860720152, guid: a6f346e1a6b29e24481420870ced60b7, type: 3}
   Tile: {fileID: 11400000, guid: cab7b59ec191b004db9f81ad5e0949b0, type: 2}
+  Solid: 1
   ParticleColors:
   - {r: 0.21960786, g: 0.2392157, b: 0.2509804, a: 1}
   - {r: 0.18823531, g: 0.20392159, b: 0.21176472, a: 1}

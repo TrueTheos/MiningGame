@@ -45,7 +45,7 @@ public class WorldGenerator : MonoBehaviour
 
             for (int y = 0; y < _worldHeight; y++)
             {
-                _worldManager.SetTile(x, y, _stoneTile);
+                _worldManager.PlaceTile(x, y, _stoneTile);
             }
         }
 
@@ -67,7 +67,7 @@ public class WorldGenerator : MonoBehaviour
                     float noiseValue = Mathf.PerlinNoise(x * _perlinCaveScale, y * _perlinCaveScale);
                     if (noiseValue > _perlinCaveThreshold)
                     {
-                        _worldManager.SetTile(x, y, null); // Turn into air (Cave)
+                        _worldManager.PlaceTile(x, y, null); // Turn into air (Cave)
                     }
                 }
             }
@@ -83,7 +83,7 @@ public class WorldGenerator : MonoBehaviour
             {
                 if (_worldManager.WorldData[x, y] != null) // Only affect solid tiles
                 {
-                    _worldManager.SetTile(x, y, (Random.value < _initialCaveChance) ? null : _worldManager.WorldData[x, y]);
+                    _worldManager.PlaceTile(x, y, (Random.value < _initialCaveChance) ? null : _worldManager.WorldData[x, y]);
                 }
             }
         }
@@ -97,7 +97,7 @@ public class WorldGenerator : MonoBehaviour
             {
                 for (int y = 0; y < _worldHeight; y++)
                 {
-                    _worldManager.SetTile(x, y, cStep[x,y]);
+                    _worldManager.PlaceTile(x, y, cStep[x,y]);
                 }
             }
         }

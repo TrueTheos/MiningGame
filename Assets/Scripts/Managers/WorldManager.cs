@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.U2D;
 using UnityEngine.UIElements;
+using UnityEngine.WSA;
 using static UnityEditor.PlayerSettings;
 
 public class WorldManager : MonoBehaviour
@@ -19,6 +20,7 @@ public class WorldManager : MonoBehaviour
     [SerializeField] private ParticleSystem _destroyTileParticle;
 
     public TileSO[,] WorldData { get; private set; } // Stores world tiles (0 = air, 1 = dirt, 2 = stone, 3 = ore)
+    public CustomBuilding[,] Buildings { get; private set; }
 
     private Dictionary<Vector2Int, int> _durabilityLeft = new();
 
@@ -36,6 +38,7 @@ public class WorldManager : MonoBehaviour
     private void Start()
     {
         WorldData = new TileSO[WorldWidth, WorldHeight];
+        Buildings = new CustomBuilding[WorldWidth, WorldHeight];
 
         _worldGenerator.Generate(this);
 
@@ -55,45 +58,69 @@ public class WorldManager : MonoBehaviour
     [System.Obsolete]
     public void Hit(Vector2Int pos, int power)
     {
-        if (WorldData[pos.x, pos.y] == null) return;
-
-        if (!_durabilityLeft.ContainsKey(pos)) _durabilityLeft[pos] = WorldData[pos.x, pos.y].Durability;
-
-        _durabilityLeft[pos] -= power;
+        if (WorldData[pos.x, pos.y] == null && Buildings[pos.x,pos.y] == null) return;
 
         AudioManager.Instance.PlayMine();
 
-        Vector3Int tilePosition = new Vector3Int(pos.x, pos.y, 0);
-        TileBase tile = MainTilemap.GetTile(tilePosition);
-        Vector3 worldPosition = MainTilemap.CellToWorld(tilePosition);
+        if (WorldData[pos.x, pos.y] != null)
+        {
+            if (!_durabilityLeft.ContainsKey(pos)) _durabilityLeft[pos] = WorldData[pos.x, pos.y].Durability;
+            _durabilityLeft[pos] -= power;
 
-        GameObject tempObj = new GameObject("TempTile");
-        SpriteRenderer sr = tempObj.AddComponent<SpriteRenderer>();
+            Vector3Int tilePosition = new Vector3Int(pos.x, pos.y, 0);
+            TileBase tile = MainTilemap.GetTile(tilePosition);
+            Vector3 worldPosition = MainTilemap.CellToWorld(tilePosition);
 
-        sr.sprite = MainTilemap.GetSprite(tilePosition);
+            GameObject tempObj = new GameObject("TempTile");
+            SpriteRenderer sr = tempObj.AddComponent<SpriteRenderer>();
 
-        sr.sortingLayerID = MainTilemap.GetComponent<TilemapRenderer>().sortingLayerID;
-        sr.sortingOrder = MainTilemap.GetComponent<TilemapRenderer>().sortingOrder + 1;
-        tempObj.transform.position = worldPosition + new Vector3(.5f, .5f, 0);
+            sr.sprite = MainTilemap.GetSprite(tilePosition);
 
-        var originalColor = MainTilemap.GetColor(tilePosition);
-        MainTilemap.SetColor(tilePosition, new Color(0, 0, 0, 0));
+            sr.sortingLayerID = MainTilemap.GetComponent<TilemapRenderer>().sortingLayerID;
+            sr.sortingOrder = MainTilemap.GetComponent<TilemapRenderer>().sortingOrder + 1;
+            tempObj.transform.position = worldPosition + new Vector3(.5f, .5f, 0);
 
-        tempObj.transform.DOScale(new Vector3(.8f, .8f, 1f), 0.05f)
-            .SetEase(Ease.OutQuad)
-            .OnComplete(() => {
-                tempObj.transform.DOScale(Vector3.one, 0.05f)
-                    .SetEase(Ease.InQuad)
-                    .OnComplete(() => {
-                        MainTilemap.SetColor(tilePosition, originalColor);
-                        if (_durabilityLeft[pos] <= 0)
-                        {
-                            //playsound break
-                            BreakTile(pos.x, pos.y);
-                        }
-                        Destroy(tempObj);
-                    });
-            });
+            var originalColor = MainTilemap.GetColor(tilePosition);
+            MainTilemap.SetColor(tilePosition, new Color(0, 0, 0, 0));
+
+            tempObj.transform.DOScale(new Vector3(.8f, .8f, 1f), 0.05f)
+                .SetEase(Ease.OutQuad)
+                .OnComplete(() => {
+                    tempObj.transform.DOScale(Vector3.one, 0.05f)
+                        .SetEase(Ease.InQuad)
+                        .OnComplete(() => {
+                            MainTilemap.SetColor(tilePosition, originalColor);
+                            if (_durabilityLeft[pos] <= 0)
+                            {
+                                //playsound break
+                                BreakTile(pos.x, pos.y);
+                            }
+                            DestroyImmediate(tempObj);
+                        });
+                });
+
+        }
+        else if(Buildings[pos.x, pos.y] != null)
+        {
+            if (!_durabilityLeft.ContainsKey(pos)) _durabilityLeft[pos] = Buildings[pos.x, pos.y].Durability;
+            _durabilityLeft[pos] -= power;
+
+            GameObject building = Buildings[pos.x, pos.y].gameObject;
+
+            building.transform.DOScale(new Vector3(.8f, .8f, 1f), 0.05f)
+                .SetEase(Ease.OutQuad)
+                .OnComplete(() => {
+                    building.transform.DOScale(Vector3.one, 0.05f)
+                        .SetEase(Ease.InQuad)
+                        .OnComplete(() => {
+                            if (_durabilityLeft[pos] <= 0)
+                            {
+                                //playsound break
+                                BreakTile(pos.x, pos.y);
+                            }
+                        });
+                });
+        }
     }
 
     public TileSO GetTileAtMousePos()
@@ -103,29 +130,51 @@ public class WorldManager : MonoBehaviour
         return WorldData[mousePosition2D.x, mousePosition2D.y];
     }
 
-    [System.Obsolete]
-    public void BreakTile(int x, int y)
-    {
-        if (WorldData[x, y] == null) return;
-        Vector3Int tilePosition = new Vector3Int(x, y, 0);
-        Vector3 worldPosition = MainTilemap.CellToWorld(tilePosition);
-        var particle = Instantiate(_destroyTileParticle, tilePosition + new Vector3(.5f,.5f, 0), Quaternion.identity);
-        particle.startColor = WorldData[x, y].ParticleColors.Random();
-        particle.Play();
-        particle.Emit(Random.Range(3, 8));
-        Destroy(particle.gameObject, particle.startLifetime);
-        SetTile(x, y, null);
-    }
-
-    public void SetTileAtMouse(TileSO tile)
+    public PlacableItem GetBuildingAtMousePos()
     {
         Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector2Int mousePosition2D = new Vector2Int(Mathf.RoundToInt(mousePos.x - .5f), Mathf.RoundToInt(mousePos.y - .5f));
-
-        SetTile(mousePosition2D.x, mousePosition2D.y, tile);
+        return Buildings[mousePosition2D.x, mousePosition2D.y];
     }
 
-    public void SetTile(int x, int y, TileSO tile)
+    [System.Obsolete]
+    public void BreakTile(int x, int y)
+    {
+        Vector3Int tilePosition = new Vector3Int(x, y, 0);
+
+        if (WorldData[x, y] != null)
+        {  
+            Vector3 worldPosition = MainTilemap.CellToWorld(tilePosition);
+            var particle = Instantiate(_destroyTileParticle, tilePosition + new Vector3(.5f, .5f, 0), Quaternion.identity);
+            particle.startColor = WorldData[x, y].ParticleColors.Random();
+            particle.Play();
+            particle.Emit(Random.Range(3, 8));
+            Destroy(particle.gameObject, particle.startLifetime);
+            SetTile(x, y, null);
+        }
+
+        if (Buildings[x,y] != null)
+        {
+            Buildings[x, y].OnBreak();
+            Buildings[x, y] = null;
+        }
+    }
+
+    public void PlaceTile(int x, int y, TileSO tile)
+    {
+        SetTile(x, y, tile);
+    }
+
+    public void PlaceBuilding(int x, int y, CustomBuilding building)
+    {
+        CustomBuilding newBuilding = Instantiate(building.gameObject, new Vector3(x + .5f, y + .5f, 0), Quaternion.identity).GetComponent<CustomBuilding>();
+
+        Buildings[x, y] = newBuilding;
+        newBuilding.Pos = new Vector2Int(x, y);
+
+    }
+
+    private void SetTile(int x, int y, TileSO tile)
     {
         WorldData[x,y] = tile;
         if(tile != null) MainTilemap.SetTile(new Vector3Int(x, y, 0), tile.Tile);
