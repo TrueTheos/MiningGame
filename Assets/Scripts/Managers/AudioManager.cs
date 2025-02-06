@@ -20,4 +20,9 @@ public class AudioManager : MonoBehaviour
     {
         _source.PlayOneShot(_mineClips.Random());
     }
+
+    public void Play(AudioClip clip)
+    {
+        _source.PlayOneShot(clip);
+    }
 }

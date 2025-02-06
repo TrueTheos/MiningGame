@@ -24,6 +24,9 @@ public class WorldGenerator : MonoBehaviour
     [SerializeField] private TileSO _stoneTile;
     [SerializeField] private TileSO _oreTile;
 
+    [SerializeField] private CustomBuilding _vase;
+    [SerializeField] private float _vaseSpawnChance = 0.02f;
+
     private WorldManager _worldManager;
 
     private int _worldWidth => _worldManager.WorldWidth;
@@ -54,6 +57,25 @@ public class WorldGenerator : MonoBehaviour
         GenerateCavesWithCellularAutomata();
 
         GenerateOres();
+
+        GenerateVases();
+    }
+
+    private void GenerateVases()
+    {
+        for (int x = 0; x < _worldWidth; x++)
+        {
+            for (int y = 1; y < _worldHeight; y++)
+            {
+                if (_worldManager.WorldData[x, y] == null && _worldManager.WorldData[x, y - 1] != null)
+                {
+                    if (Random.value < _vaseSpawnChance)
+                    {
+                        _worldManager.PlaceBuilding(x, y, _vase);
+                    }
+                }
+            }
+        }
     }
 
     void GeneratePerlinCaves()

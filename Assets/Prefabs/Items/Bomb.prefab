@@ -47,11 +47,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7244b75ca73a1c04daa8ff20c0c43339, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Name: Bomb
+  SpriteRend: {fileID: 4997985514340520467}
   Radius: 3
   ThrowPower: 15
   ExplodeOnCollision: 0
   ExplodeTime: 3
   Sticky: 0
+  Clip: {fileID: 8300000, guid: 8c03c52c5b2f0304a8a5cb183d827d65, type: 3}
 --- !u!212 &4997985514340520467
 SpriteRenderer:
   m_ObjectHideFlags: 0

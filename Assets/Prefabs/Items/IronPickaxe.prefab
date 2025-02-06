@@ -46,6 +46,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c1bc30f80e734947b42c373ab628baa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Name: Iron Pickaxe
+  SpriteRend: {fileID: 4667659477345240364}
   _power: 1
   _cooldown: 0.3
   _clip: {fileID: 7400000, guid: 12105e80b28c6cf448a223537b115da3, type: 2}

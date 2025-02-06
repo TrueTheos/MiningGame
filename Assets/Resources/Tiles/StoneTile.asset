@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 397760fafdd7fb44cba728dc02c5f5b1, type: 3}
-  m_Name: Stone
+  m_Name: StoneTile
   m_EditorClassIdentifier: 
   Name: Stone
   Durability: 3
@@ -20,3 +20,7 @@ MonoBehaviour:
   ParticleColors:
   - {r: 0.21960786, g: 0.2392157, b: 0.2509804, a: 1}
   - {r: 0.18823531, g: 0.20392159, b: 0.21176472, a: 1}
+  Drop:
+    Item: {fileID: 0}
+    Amount: 0
+  DropItself: 1

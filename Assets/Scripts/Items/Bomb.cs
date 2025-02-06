@@ -10,6 +10,7 @@ public class Bomb : Item
     public bool ExplodeOnCollision;
     public float ExplodeTime;
     public bool Sticky;
+    public AudioClip Clip;
 
     private void Awake()
     {
@@ -22,10 +23,12 @@ public class Bomb : Item
     public override void UseOnce()
     {
         if (transform.parent == null) return;
-        transform.SetParent(null);
-        Rigidbody2D rb = GetComponent<Rigidbody2D>();
+
+        var newBomb = Instantiate(gameObject, transform.position, Quaternion.identity);
+        newBomb.transform.SetParent(null);
+        Rigidbody2D rb = newBomb.GetComponent<Rigidbody2D>();
         rb.bodyType = RigidbodyType2D.Dynamic;
-        var collider = GetComponent<Collider2D>();
+        var collider = newBomb.GetComponent<Collider2D>();
         collider.enabled = true;
 
         Inventory.Instance.RemoveOne();
@@ -37,8 +40,13 @@ public class Bomb : Item
 
             rb.AddForce(throwDirection * ThrowPower, ForceMode2D.Impulse);
 
-            if(ExplodeTime > 0) StartCoroutine(ExplodeAfterDelay());
+            if (ExplodeTime > 0) newBomb.GetComponent<Bomb>().StartExploding();
         }
+    }
+
+    public void StartExploding()
+    {
+        StartCoroutine(ExplodeAfterDelay());
     }
 
     private void Explode()
@@ -62,6 +70,9 @@ public class Bomb : Item
                 }
             }
         }
+
+        AudioManager.Instance.PlayMine();
+        AudioManager.Instance.Play(Clip);
 
         DestroyImmediate(gameObject);
     }

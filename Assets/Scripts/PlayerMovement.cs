@@ -122,6 +122,15 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        var pickup = collision.gameObject.GetComponent<PickupableItem>();
+        if (pickup != null)
+        {
+            pickup.PickUp();
+        }
+    }
+
     private void OnTriggerStay2D(Collider2D collision)
     {
         if (collision.tag == "Climbable")
@@ -145,4 +154,10 @@ public record ItemAmount
 {
     public Item Item;
     public int Amount;
+
+    public ItemAmount(Item item, int amount)
+    {
+        Item = item;
+        Amount = amount;
+    }
 }

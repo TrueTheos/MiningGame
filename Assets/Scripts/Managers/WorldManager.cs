@@ -18,6 +18,8 @@ public class WorldManager : MonoBehaviour
 
     [SerializeField] private GameObject _player;
     [SerializeField] private ParticleSystem _destroyTileParticle;
+    [SerializeField] private PickupableItem _pickupableItem;
+    [SerializeField] private TileBuildableItem _tileBuildableItem;
 
     public TileSO[,] WorldData { get; private set; } // Stores world tiles (0 = air, 1 = dirt, 2 = stone, 3 = ore)
     public CustomBuilding[,] Buildings { get; private set; }
@@ -142,6 +144,8 @@ public class WorldManager : MonoBehaviour
     {
         Vector3Int tilePosition = new Vector3Int(x, y, 0);
 
+        _durabilityLeft.Remove(new Vector2Int(x, y));
+
         if (WorldData[x, y] != null)
         {  
             Vector3 worldPosition = MainTilemap.CellToWorld(tilePosition);
@@ -149,15 +153,39 @@ public class WorldManager : MonoBehaviour
             particle.startColor = WorldData[x, y].ParticleColors.Random();
             particle.Play();
             particle.Emit(Random.Range(3, 8));
+            if (WorldData[x, y].Drop.Item == null && WorldData[x, y].DropItself)
+            {
+                var clone = Instantiate(_tileBuildableItem.gameObject);
+                clone.SetActive(false);
+                clone.GetComponent<TileBuildableItem>().Init(WorldData[x, y]);
+                SpawnPickupable(tilePosition.x + .5f, tilePosition.y + .5f, new ItemAmount(clone.GetComponent<Item>(), 1));
+            }
+            if (WorldData[x, y].Drop.Item != null)
+            {
+                SpawnPickupable(tilePosition.x + .5f, tilePosition.y + .5f, WorldData[x, y].Drop);
+            }
             Destroy(particle.gameObject, particle.startLifetime);
             SetTile(x, y, null);
         }
 
         if (Buildings[x,y] != null)
         {
+            if (Buildings[x, y].drop.Item == null && Buildings[x, y].dropItself)
+            {
+                var clone = Instantiate(Buildings[x, y].gameObject);
+                clone.SetActive(false);
+                SpawnPickupable(tilePosition.x + .5f, tilePosition.y + .5f, new ItemAmount(clone.GetComponent<Item>(), 1));
+            }
+            if(Buildings[x, y].drop.Item != null) SpawnPickupable(tilePosition.x + .5f, tilePosition.y + .5f, Buildings[x, y].drop); 
             Buildings[x, y].OnBreak();
             Buildings[x, y] = null;
         }
+    }
+
+    public void SpawnPickupable(float x, float y, ItemAmount itemAmount)
+    {
+        PickupableItem p = Instantiate(_pickupableItem, new Vector3(x, y, 0f), Quaternion.identity).GetComponent<PickupableItem>();
+        p.Init(itemAmount);
     }
 
     public void PlaceTile(int x, int y, TileSO tile)

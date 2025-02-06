@@ -17,11 +17,11 @@ public enum PlacementType
 
 public abstract class PlacableItem : Item
 {
-    public SpriteRenderer Art;
-
     [Header("Placement Settings")]
     [SerializeField] private PlacementType allowedPlacements;
     [SerializeField] private bool destroyWhenSupportDestroyed = true;
+    public bool dropItself = true;
+    public ItemAmount drop;
 
     [HideInInspector] public Vector2Int Pos;
 

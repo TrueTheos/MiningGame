@@ -45,9 +45,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a355369a6ab93c48a7fde1db3cbfecb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Art: {fileID: 4478670608722118212}
+  Name: Torch
+  SpriteRend: {fileID: 4478670608722118212}
   allowedPlacements: 2
   destroyWhenSupportDestroyed: 1
+  dropItself: 1
+  drop:
+    Item: {fileID: 0}
+    Amount: 0
   Pos: {x: 0, y: 0}
   Solid: 0
   Durability: 1

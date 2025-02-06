@@ -8,7 +8,16 @@ public class TileBuildableItem : PlacableItem
 
     private void Start()
     {
-        Art.sprite = Tile.Art;
+        if(Tile != null)
+        {
+            SpriteRend.sprite = Tile.Art;
+        }
+    }
+
+    public void Init(TileSO tile)
+    {
+        Tile = tile;
+        SpriteRend.sprite = Tile.Art;
     }
 
     public override void UseOnce()
