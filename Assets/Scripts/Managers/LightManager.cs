@@ -25,6 +25,8 @@ public class LightManager : MonoBehaviour
     private int _worldWidth => _worldManager.WorldWidth;
     private int _worldHeight => _worldManager.WorldHeight;
     private int _textureWidth, _textureHeight;
+    private int _texOriginX, _texOriginY;
+    [SerializeField] private int _textureMargin = 2;
 
     private void Awake()
     {
@@ -41,50 +43,85 @@ public class LightManager : MonoBehaviour
 
         _lightMap = new float[_worldWidth, _worldHeight];
 
-        _textureWidth = _worldWidth;
-        _textureHeight = _worldHeight;
+        UpdateTextureRegion();
+
         _lightTexture = new Texture2D(_textureWidth, _textureHeight);
         _lightTexture.filterMode = FilterMode.Point;
 
         GameObject lightObject = new GameObject("LightingOverlay");
         _lightRenderer = lightObject.AddComponent<SpriteRenderer>();
-        _lightRenderer.sprite = Sprite.Create(_lightTexture, new Rect(0, 0, _textureWidth, _textureHeight), new Vector2(0.5f, 0.5f));
-        _lightRenderer.transform.position = new Vector2(_worldWidth / 2, _worldHeight / 2);
-        _lightRenderer.transform.localScale *= 100;
-        _lightRenderer.color = new Color(1, 1, 1, 1);
+        _lightRenderer.sprite = Sprite.Create(
+            _lightTexture,
+            new Rect(0, 0, _textureWidth, _textureHeight),
+            new Vector2(0.5f, 0.5f));
+        // Position the overlay at the center of the texture region in world space.
+        _lightRenderer.transform.position = new Vector2(_texOriginX + _textureWidth / 2f,
+                                                          _texOriginY + _textureHeight / 2f);
+        _lightRenderer.transform.localScale *= 100f;
         _lightRenderer.sortingOrder = 10;
     }
 
-    void Update()
-    {
-        if (_worldManager == null || !_worldManager.Ready) return;
-        UpdateLighting();
-    }
-
-    void UpdateLighting()
+    void UpdateTextureRegion()
     {
         Vector3 camPos = _mainCamera.transform.position;
         float camHalfWidth = _mainCamera.orthographicSize * _mainCamera.aspect;
         float camHalfHeight = _mainCamera.orthographicSize;
 
-        // Get the visible tile range from camera
-        int minX = Mathf.Max(0, Mathf.FloorToInt(camPos.x - camHalfWidth));
-        int maxX = Mathf.Min(_worldWidth, Mathf.CeilToInt(camPos.x + camHalfWidth));
-        int minY = Mathf.Max(0, Mathf.FloorToInt(camPos.y - camHalfHeight));
-        int maxY = Mathf.Min(_worldHeight, Mathf.CeilToInt(camPos.y + camHalfHeight));
+        // Compute visible region bounds and add a margin.
+        _texOriginX = Mathf.FloorToInt(camPos.x - camHalfWidth) - _textureMargin;
+        _texOriginY = Mathf.FloorToInt(camPos.y - camHalfHeight) - _textureMargin;
+        int maxX = Mathf.CeilToInt(camPos.x + camHalfWidth) + _textureMargin;
+        int maxY = Mathf.CeilToInt(camPos.y + camHalfHeight) + _textureMargin;
 
-        Vector2 playerPos = Vector2.zero;
-        if (_player != null)
+        _textureWidth = maxX - _texOriginX;
+        _textureHeight = maxY - _texOriginY;
+    }
+
+    void Update()
+    {
+        if (_worldManager == null || !_worldManager.Ready) return;
+        Vector3 camPos = _mainCamera.transform.position;
+        int newOriginX = Mathf.FloorToInt(camPos.x - _mainCamera.orthographicSize * _mainCamera.aspect) - _textureMargin;
+        int newOriginY = Mathf.FloorToInt(camPos.y - _mainCamera.orthographicSize) - _textureMargin;
+        if (newOriginX != _texOriginX || newOriginY != _texOriginY)
         {
-            playerPos = new Vector2(_player.transform.position.x, _player.transform.position.y);
+            UpdateTextureRegion();
+            // Re-create the texture and sprite if the size changes.
+            _lightTexture = new Texture2D(_textureWidth, _textureHeight);
+            _lightTexture.filterMode = FilterMode.Point;
+            _lightRenderer.sprite = Sprite.Create(
+                _lightTexture,
+                new Rect(0, 0, _textureWidth, _textureHeight),
+                new Vector2(0.5f, 0.5f));
+            _lightRenderer.transform.position = new Vector2(_texOriginX + _textureWidth / 2f,
+                                                              _texOriginY + _textureHeight / 2f);
         }
 
-        // Loop through only visible tiles
-        for (int y = minY; y < maxY; y++)  // bottom-to-top
+        if(Input.GetMouseButtonDown(1))
         {
-            for (int x = minX; x < maxX; x++)  // left-to-right
+            Vector2 mousePos = Input.mousePosition;
+        }
+
+        UpdateLighting();
+    }
+
+    void UpdateLighting()
+    {
+        Vector2 playerPos = _player.transform.position;
+
+        // Loop through only the tiles within the current texture region.
+        for (int y = 0; y < _textureHeight; y++)
+        {
+            for (int x = 0; x < _textureWidth; x++)
             {
-                ComputeLightForTile(x, y, playerPos);
+                // Translate texture coordinates back to world coordinates.
+                int worldX = _texOriginX + x;
+                int worldY = _texOriginY + y;
+                // Ensure we’re within the bounds of the world.
+                if (worldX >= 0 && worldY >= 0 && worldX < _worldWidth && worldY < _worldHeight)
+                {
+                    ComputeLightForTile(worldX, worldY, playerPos);
+                }
             }
         }
 
@@ -116,14 +153,12 @@ public class LightManager : MonoBehaviour
     void ComputeLightForTile(int x, int y, Vector2 playerPos)
     {
         float light = 0f;
-
         Vector2Int currentTile = new Vector2Int(x, y);
         foreach (var lightSource in _persistentLights)
         {
             float dist = Vector2.Distance(currentTile, lightSource.Key);
             if (dist < lightSource.Value * 2) // Light radius is twice the power
             {
-                // Check line of sight to the light source
                 bool visible = HasLineOfSight(lightSource.Key.x, lightSource.Key.y, x, y);
                 float intensityMultiplier = visible ? 1f : _wallLightLoseRate;
                 float sourceLight = lightSource.Value * (1f - (dist / (lightSource.Value * 2))) * intensityMultiplier;
@@ -131,27 +166,33 @@ public class LightManager : MonoBehaviour
             }
         }
 
-        // Player light (compute center-based distance)
-        if (_player != null)
+        // Player light (using tile centers)
+        float tileCenterX = x + 0.5f;
+        float tileCenterY = y + 0.5f;
+        float distPlayer = Vector2.Distance(new Vector2(tileCenterX, tileCenterY), playerPos);
+        if (distPlayer < _playerLightRadius)
         {
-            int tileX = x;
-            int tileY = y;
-            float dist = Vector2.Distance(new Vector2(tileX + 0.5f, tileY + 0.5f), new Vector2(_player.transform.position.x, _player.transform.position.y));
-            if (dist < _playerLightRadius)
-            {
-                // Check if the tile is directly visible from the player
-                int playerTileX = Mathf.FloorToInt(_player.transform.position.x);
-                int playerTileY = Mathf.FloorToInt(_player.transform.position.y);
-                bool visible = HasLineOfSight(playerTileX, playerTileY, tileX, tileY);
+            bool visible = HasLineOfSight(PlayerMovement.Instance.X, PlayerMovement.Instance.Y, x, y);
+            float intensityMultiplier = visible ? 1f : _wallLightLoseRate;
 
-                // If visible, full light; if not, reduce the light intensity
-                float intensityMultiplier = visible ? 1f : _wallLightLoseRate;
-                float playerLight = _playerLightIntensity * (1f - (dist / _playerLightRadius)) * intensityMultiplier;
-                light = Mathf.Max(light, playerLight);
+            float playerLight = 0;
+
+            /*if (!visible)
+            {
+                if (distPlayer >= _playerLightRadius) playerLight = 0f;
+                else if (distPlayer < 1) playerLight = .2f;
+                else if (distPlayer < 2) playerLight = .1f;
+                else if (distPlayer < 3) playerLight = .05f;
             }
+            else
+            {
+                playerLight = _playerLightIntensity * (1f - (distPlayer / _playerLightRadius)) * intensityMultiplier;
+            }*/
+            playerLight = _playerLightIntensity * (1f - (distPlayer / _playerLightRadius)) * intensityMultiplier;
+            light = Mathf.Max(light, playerLight);
         }
 
-        // Spread light from nearby tiles (using cached values)
+        // Spread light from nearby tiles.
         for (int dx = -1; dx <= 1; dx++)
         {
             for (int dy = -1; dy <= 1; dy++)
@@ -160,16 +201,24 @@ public class LightManager : MonoBehaviour
                 int ny = y + dy;
                 if (nx >= 0 && ny >= 0 && nx < _worldWidth && ny < _worldHeight)
                 {
-                    light = Mathf.Max(light, _lightMap[nx, ny] * 0.85f);
+                    if(!_worldManager.IsLightBlocker(nx,ny)) light = Mathf.Max(light, _lightMap[nx, ny] * 0.85f);
                 }
             }
         }
 
-        // Obstruct light if the tile is occupied (or solid)
+        // Obstruct light if the tile is occupied.
         if (_worldManager.WorldData[x, y] != null)
             light *= _lightLoseRate;
 
-        _lightMap[x, y] = Mathf.Clamp01(light);
+        float clampedLight = Mathf.Clamp01(light);
+
+        var building = _worldManager.Buildings[x, y];
+        if (building != null)
+        {
+            building.SpriteRend.color = new Color(clampedLight, clampedLight, clampedLight, 1);
+        }
+
+        _lightMap[x, y] = clampedLight;
     }
 
     bool HasLineOfSight(int x0, int y0, int x1, int y1)
@@ -182,10 +231,8 @@ public class LightManager : MonoBehaviour
 
         while (true)
         {
-            // If this tile is an obstacle, block light (you may decide whether to allow partial light)
             if (_worldManager.WorldData[x0, y0] != null)
             {
-                // Optionally, you can allow a small amount of light to pass if you want partial occlusion.
                 return false;
             }
 
@@ -212,12 +259,18 @@ public class LightManager : MonoBehaviour
     {
         Color[] colors = new Color[_textureWidth * _textureHeight];
         int i = 0;
+        // Iterate over the texture region.
         for (int y = 0; y < _textureHeight; y++)
         {
             for (int x = 0; x < _textureWidth; x++)
             {
-                float light = _lightMap[x, y];
-                // The alpha is 1 - light, so dark areas have high alpha
+                int worldX = _texOriginX + x;
+                int worldY = _texOriginY + y;
+                float light = 0f;
+                if (worldX >= 0 && worldY >= 0 && worldX < _worldWidth && worldY < _worldHeight)
+                    light = _lightMap[worldX, worldY];
+
+                // Set the pixel’s alpha based on the light (darker where light is lower).
                 colors[i++] = new Color(0, 0, 0, 1 - light);
             }
         }

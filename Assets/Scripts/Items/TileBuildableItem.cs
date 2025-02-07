@@ -35,7 +35,7 @@ public class TileBuildableItem : PlacableItem
     {
         if (!CanPlace(x, y)) return;
 
-        WorldManager.Instance.PlaceTile(x, y, Tile);
+        WorldManager.Instance.SetTile(x, y, Tile);
         Inventory.Instance.RemoveOne();
     }
 }

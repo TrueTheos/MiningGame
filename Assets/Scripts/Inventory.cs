@@ -12,6 +12,10 @@ public class Inventory : MonoBehaviour
     private List<ItemAmount> _items = new();
     private int _currentIndex = -1;
 
+    [Header("Inventory Settings")]
+    [SerializeField] private int slotCount = 10;
+    private ItemAmount[] slots;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -20,6 +24,8 @@ public class Inventory : MonoBehaviour
             return;
         }
         Instance = this;
+
+        slots = new ItemAmount[slotCount];
     }
 
     private void Start()

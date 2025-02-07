@@ -12,14 +12,17 @@ public class WorldManager : MonoBehaviour
 {
     public static WorldManager Instance;
 
-    public int WorldWidth = 100;
-    public int WorldHeight = 50;
+    public int WorldWidth;
+    public int WorldHeight;
     public Tilemap MainTilemap;
 
     [SerializeField] private GameObject _player;
     [SerializeField] private ParticleSystem _destroyTileParticle;
     [SerializeField] private PickupableItem _pickupableItem;
     [SerializeField] private TileBuildableItem _tileBuildableItem;
+    [SerializeField] private int _playerShowTileRadius;
+
+    public readonly int CHUNK_SIZE = 64;
 
     public TileSO[,] WorldData { get; private set; } // Stores world tiles (0 = air, 1 = dirt, 2 = stone, 3 = ore)
     public CustomBuilding[,] Buildings { get; private set; }
@@ -30,19 +33,72 @@ public class WorldManager : MonoBehaviour
 
     [HideInInspector] public bool Ready = false;
 
+    private Camera _cam;
+    private Vector2Int _lastPlayerPosition;
+
     private void Awake()
     {
         Instance = this;
         _worldGenerator = GetComponent<WorldGenerator>();
+        _cam = Camera.main;
     }
-
 
     private void Start()
     {
         WorldData = new TileSO[WorldWidth, WorldHeight];
         Buildings = new CustomBuilding[WorldWidth, WorldHeight];
 
+        StartCoroutine(InitWorld());        
+    }
+
+    public bool IsEmpty(Vector2Int pos) => IsEmpty(pos.x, pos.y);
+
+    public bool IsEmpty(int x, int y)
+    {
+        return WorldData[x,y] == null && Buildings[x,y] == null;
+    }
+
+    public bool IsLightBlocker(int x, int y)
+    {
+        return (WorldData[x, y] != null && WorldData[x, y].Solid) || (Buildings[x, y] != null && Buildings[x, y].Solid);
+    }
+
+    private void Update()
+    {
+        Vector2Int playerPos = new Vector2Int(Mathf.RoundToInt(_player.transform.position.x), Mathf.RoundToInt(_player.transform.position.y));
+
+        if (playerPos != _lastPlayerPosition)
+        {
+            RefreshVisibleTiles(playerPos);
+            _lastPlayerPosition = playerPos;
+        }
+    }
+
+    private void RefreshVisibleTiles(Vector2Int playerPos)
+    {
+        for (int x = playerPos.x - _playerShowTileRadius; x <= playerPos.x + _playerShowTileRadius; x++)
+        {
+            for (int y = playerPos.y - _playerShowTileRadius; y <= playerPos.y + _playerShowTileRadius; y++)
+            {
+                if (x >= 0 && x < WorldWidth && y >= 0 && y < WorldHeight)
+                {
+                    ShowTile(x, y);
+                }
+            }
+        }
+    }
+
+    private IEnumerator InitWorld()
+    {
+        _player.gameObject.SetActive(false);
+
+        MainTilemap.GetComponent<TilemapCollider2D>().enabled = false;
         _worldGenerator.Generate(this);
+
+        while (!_worldGenerator.Ready)
+        {
+            yield return new WaitForSeconds(1);
+        }
 
         for (int x = WorldWidth / 2 - 1; x <= WorldWidth / 2 + 1; x++)
         {
@@ -52,7 +108,9 @@ public class WorldManager : MonoBehaviour
             }
         }
 
+        MainTilemap.GetComponent<TilemapCollider2D>().enabled = true;
         _player.transform.position = new Vector2(WorldWidth / 2, WorldHeight / 2);
+        _player.gameObject.SetActive(true);
 
         Ready = true;
     }
@@ -91,12 +149,13 @@ public class WorldManager : MonoBehaviour
                     tempObj.transform.DOScale(Vector3.one, 0.05f)
                         .SetEase(Ease.InQuad)
                         .OnComplete(() => {
-                            MainTilemap.SetColor(tilePosition, originalColor);
+                            
                             if (_durabilityLeft[pos] <= 0)
                             {
                                 //playsound break
                                 BreakTile(pos.x, pos.y);
                             }
+                            MainTilemap.SetColor(tilePosition, originalColor);
                             DestroyImmediate(tempObj);
                         });
                 });
@@ -127,14 +186,14 @@ public class WorldManager : MonoBehaviour
 
     public TileSO GetTileAtMousePos()
     {
-        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 mousePos = _cam.ScreenToWorldPoint(Input.mousePosition);
         Vector2Int mousePosition2D = new Vector2Int(Mathf.RoundToInt(mousePos.x - .5f), Mathf.RoundToInt(mousePos.y - .5f));
         return WorldData[mousePosition2D.x, mousePosition2D.y];
     }
 
     public PlacableItem GetBuildingAtMousePos()
     {
-        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 mousePos = _cam.ScreenToWorldPoint(Input.mousePosition);
         Vector2Int mousePosition2D = new Vector2Int(Mathf.RoundToInt(mousePos.x - .5f), Mathf.RoundToInt(mousePos.y - .5f));
         return Buildings[mousePosition2D.x, mousePosition2D.y];
     }
@@ -182,15 +241,14 @@ public class WorldManager : MonoBehaviour
         }
     }
 
-    public void SpawnPickupable(float x, float y, ItemAmount itemAmount)
+    public void SpawnPickupable(float x, float y, ItemAmount itemAmount, bool randomOffset = true, bool randomRotation = true)
     {
-        PickupableItem p = Instantiate(_pickupableItem, new Vector3(x, y, 0f), Quaternion.identity).GetComponent<PickupableItem>();
+        float rX = randomOffset ? Random.Range(-.2f, .2f) : 0;
+        float rY = randomOffset ? Random.Range(-.2f, .2f) : 0;
+        float rR = randomRotation ? Random.Range(0, 360) : 0;
+        PickupableItem p = Instantiate(_pickupableItem, new Vector3(x + rX, y + rY, 0f), Quaternion.identity).GetComponent<PickupableItem>();
+        p.transform.Rotate(0, 0, rR);
         p.Init(itemAmount);
-    }
-
-    public void PlaceTile(int x, int y, TileSO tile)
-    {
-        SetTile(x, y, tile);
     }
 
     public void PlaceBuilding(int x, int y, CustomBuilding building)
@@ -202,11 +260,31 @@ public class WorldManager : MonoBehaviour
 
     }
 
-    private void SetTile(int x, int y, TileSO tile)
+    public void SetTile(int x, int y, TileSO tile, bool showTile = true)
     {
         WorldData[x,y] = tile;
-        if(tile != null) MainTilemap.SetTile(new Vector3Int(x, y, 0), tile.Tile);
-        else MainTilemap.SetTile(new Vector3Int(x, y, 0), null);
+
+        if(showTile) ShowTile(x, y);
+
+        //if (IsTileInView(x, y)) ShowTile(x, y);
         //MainTilemap.SetTile(x,)
     }
+
+    private void ShowTile(int x, int y)
+    {
+        var tile = WorldData[x,y];
+        if (tile != null) MainTilemap.SetTile(new Vector3Int(x, y, 0), tile.Tile);
+        else MainTilemap.SetTile(new Vector3Int(x, y, 0), null);
+    }
+
+    private bool IsTileInView(int x, int y)
+    {
+        Vector3 worldPos = MainTilemap.CellToWorld(new Vector3Int(x, y, 0));
+        Vector3 viewportPoint = _cam.WorldToViewportPoint(worldPos);
+
+        return viewportPoint.x >= 0 && viewportPoint.x <= 1 &&
+               viewportPoint.y >= 0 && viewportPoint.y <= 1 &&
+               viewportPoint.z > 0; // Ensure it's in front of the camera
+    }
+
 }

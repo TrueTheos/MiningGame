@@ -35,6 +35,7 @@ public class Bomb : Item
 
         if (rb != null)
         {
+            newBomb.transform.position = PlayerMovement.Instance.transform.position;
             Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             Vector2 throwDirection = (mousePos - (Vector2)transform.position).normalized;
 
