@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static UnityEditor.Progress;
 
 public class Inventory : MonoBehaviour
 {
@@ -9,12 +10,13 @@ public class Inventory : MonoBehaviour
     [SerializeField] private GameObject _hand;
     public Item CurrentItem { get; private set; }
     [SerializeField] private List<ItemAmount> _startItems = new();
-    private List<ItemAmount> _items = new();
-    private int _currentIndex = -1;
 
     [Header("Inventory Settings")]
-    [SerializeField] private int slotCount = 10;
-    private ItemAmount[] slots;
+    [SerializeField] private int slotCount;
+    [SerializeField] private GameObject _slotPrefab;
+    [SerializeField] private Transform _slotsParent;
+    private List<InventorySlotUI> _slotsUI = new();
+    public ItemAmount[] Items;
 
     private void Awake()
     {
@@ -25,7 +27,16 @@ public class Inventory : MonoBehaviour
         }
         Instance = this;
 
-        slots = new ItemAmount[slotCount];
+        Items = new ItemAmount[slotCount];
+
+        for (int i = 0; i < slotCount; i++)
+        {
+            Items[i] = new(null, 0);
+            var newSlot = Instantiate(_slotPrefab, _slotsParent.transform);
+            InventorySlotUI slotUI = newSlot.GetComponentInChildren<InventorySlotUI>();
+            slotUI.SlotIndex = i;
+            _slotsUI.Add(slotUI);
+        }
     }
 
     private void Start()
@@ -35,37 +46,23 @@ public class Inventory : MonoBehaviour
 
     private void InitializeInventory()
     {
-        // Clean up any null items in the inventory at start
         _startItems.RemoveAll(item => item == null || item.Item == null);
 
         foreach (var startItem in _startItems)
         {
-            var item = Instantiate(startItem.Item.gameObject, _hand.transform).GetComponent<Item>();
-            item.gameObject.SetActive(false);
-            _items.Add(new ItemAmount(item, startItem.Amount));
-        }
-
-        if (_items.Count > 0)
-        {
-            _currentIndex = 0;
-            ChangeItem(_items[0].Item);
-        }
-        else
-        {
-            _currentIndex = -1;
-            ChangeItem(null);
+            AddItem(startItem);
         }
     }
 
     private void Update()
     {
         HandleItemUse();
-        HandleItemScrolling();
     }
 
+    public void RemoveOne() { }
     private void HandleItemUse()
     {
-        if (CurrentItem == null || _items.Count == 0) return;
+        if (CurrentItem == null) return;
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -81,70 +78,104 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    private void HandleItemScrolling()
+    public bool RemoveItems(List<ItemAmount> requirements)
     {
-        if (_items.Count == 0) return;
-
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll > 0f)
+        foreach (var req in requirements)
         {
-            NextItem();
+            int total = 0;
+            for (int i = 0; i < Items.Length; i++)
+            {
+                if (!Items[i].IsEmpty() && Items[i].Item == req.Item)
+                    total += Items[i].Amount;
+            }
+            if (total < req.Amount)
+            {
+                Debug.Log("Not enough " + req.Item.Name);
+                return false;
+            }
         }
-        else if (scroll < 0f)
+
+        foreach (var req in requirements)
         {
-            PreviousItem();
+            int toRemove = req.Amount;
+            for (int i = 0; i < Items.Length; i++)
+            {
+                if (!Items[i].IsEmpty() && Items[i].Item == req.Item)
+                {
+                    if (Items[i].Amount > toRemove)
+                    {
+                        Items[i].Amount -= toRemove;
+                        toRemove = 0;
+                        break;
+                    }
+                    else
+                    {
+                        toRemove -= Items[i].Amount;
+                        Destroy(Items[i].Item.gameObject);
+                        Items[i].Item = null;
+                        Items[i].Amount = 0;
+                    }
+                }
+            }
+        }
+
+        RefreshAllSlotUIs();
+
+        return true;
+    }
+
+    public void RefreshAllSlotUIs()
+    {
+        foreach (InventorySlotUI slotUI in _slotsUI)
+        {
+            slotUI.UpdateSlotUI();
         }
     }
 
-    public void RemoveOne()
+    public void SwapSlots(int indexA, int indexB)
     {
-        if (_currentIndex < 0 || _currentIndex >= _items.Count) return;
+        ItemAmount temp = Items[indexA];
+        Items[indexA] = Items[indexB];
+        Items[indexB] = temp;
 
-        _items[_currentIndex].Amount--;
-        if (_items[_currentIndex].Amount <= 0)
+        RefreshAllSlotUIs();
+    }
+
+    public void MoveItem(int fromIndex, int toIndex)
+    {
+        ItemAmount fromSlot = Items[fromIndex];
+        ItemAmount toSlot = Items[toIndex];
+
+        if (fromSlot.IsEmpty())
+            return;
+
+        if (toSlot.IsEmpty())
         {
-            _items.RemoveAt(_currentIndex);
-
-            if (_items.Count == 0)
+            // Move item to the empty slot.
+            Items[toIndex] = fromSlot;
+            Items[fromIndex] = new ItemAmount(null, 0);
+        }
+        else if (toSlot.Item == fromSlot.Item)
+        {
+            // Same item type: stack them.
+            int total = fromSlot.Amount + toSlot.Amount;
+            if (total <= 100)
             {
-                _currentIndex = -1;
-                ChangeItem(null);
-                return;
+                toSlot.Amount = total;
+                Items[fromIndex] = new ItemAmount(null, 0);
             }
             else
             {
-                // Ensure the next valid item is selected
-                Destroy(CurrentItem.gameObject);
-                _currentIndex = Mathf.Clamp(_currentIndex, 0, _items.Count - 1);
-                ChangeItem(_items[_currentIndex].Item);
+                toSlot.Amount = 100;
+                fromSlot.Amount = total - 100;
             }
         }
-    }
-
-    private void NextItem()
-    {
-        if (_items.Count == 0)
+        else
         {
-            _currentIndex = -1;
-            ChangeItem(null);
-            return;
+            SwapSlots(fromIndex, toIndex);
         }
 
-        _currentIndex = (_currentIndex + 1) % _items.Count;
-        ChangeItem(_items[_currentIndex].Item);
-    }
-
-    private void PreviousItem()
-    {
-        if (_items.Count == 0)
-        {
-            _currentIndex = -1;
-            ChangeItem(null);
-            return;
-        }
-
-        _currentIndex = (_currentIndex - 1 + _items.Count) % _items.Count;
-        ChangeItem(_items[_currentIndex].Item);
+        RefreshAllSlotUIs();
     }
 
     private void ChangeItem(Item item)
@@ -168,33 +199,47 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    public void AddItem(ItemAmount itemAmount)
+    public bool AddItem(ItemAmount itemAmount)
     {
-        if (itemAmount == null || itemAmount.Item == null) return;
+        if (itemAmount == null || itemAmount.Item == null) return false;
 
-        int existingIndex = -1;
-        if(itemAmount.Item is TileBuildableItem tileBuildable)
-        {
-            existingIndex = _items.FindIndex(
-                x => x.Item is TileBuildableItem existing && existing.Tile == tileBuildable.Tile
-            );
-        }
+        Item item = itemAmount.Item;
+        int remaining = itemAmount.Amount;
 
-        if(existingIndex == -1)  existingIndex = _items.FindIndex(x => x.Item.Name == itemAmount.Item.Name);
-
-        if (existingIndex != -1)
+        for (int i = 0; i < Items.Length; i++)
         {
-            _items[existingIndex].Amount += itemAmount.Amount;
-        }
-        else
-        {
-            var newItem = Instantiate(itemAmount.Item.gameObject, _hand.transform);
-            _items.Add(new ItemAmount(newItem.GetComponent<Item>(), itemAmount.Amount));
-            if (_items.Count == 1)
+            if (!Items[i].IsEmpty() && Items[i].Item == item)
             {
-                _currentIndex = 0;
-                ChangeItem(_items[0].Item);
+                int canAdd = 100 - Items[i].Amount;
+                if (canAdd > 0)
+                {
+                    int add = Mathf.Min(canAdd, remaining);
+                    Items[i].Amount += add;
+                    remaining -= add;
+                    RefreshAllSlotUIs();
+                    if (remaining <= 0)
+                        return true;
+                }
             }
         }
+
+        for (int i = 0; i < Items.Length; i++)
+        {
+            if (Items[i].IsEmpty())
+            {
+                int add = Mathf.Min(100, remaining);
+
+                var newItem = Instantiate(item.gameObject, _hand.transform);
+                newItem.gameObject.SetActive(false);
+                Items[i].Item = newItem.GetComponent<Item>();
+                Items[i].Amount = add;
+                remaining -= add;
+                RefreshAllSlotUIs();
+                if (remaining <= 0)
+                    return true;
+            }
+        }
+
+        return false;
     }
 }

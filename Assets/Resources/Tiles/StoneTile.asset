@@ -1,26 +1,3 @@
-%YAML 1.1
-%TAG !u! tag:unity3d.com,2011:
---- !u!114 &11400000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 397760fafdd7fb44cba728dc02c5f5b1, type: 3}
-  m_Name: StoneTile
-  m_EditorClassIdentifier: 
-  Name: Stone
-  Durability: 3
-  Art: {fileID: -1860720152, guid: a6f346e1a6b29e24481420870ced60b7, type: 3}
-  Tile: {fileID: 11400000, guid: cab7b59ec191b004db9f81ad5e0949b0, type: 2}
-  Solid: 1
-  ParticleColors:
-  - {r: 0.21960786, g: 0.2392157, b: 0.2509804, a: 1}
-  - {r: 0.18823531, g: 0.20392159, b: 0.21176472, a: 1}
-  Drop:
-    Item: {fileID: 0}
-    Amount: 0
-  DropItself: 1
+version https://git-lfs.github.com/spec/v1
+oid sha256:5914f113469c8dff7155a0800efdabbbdfede325dafd988dad80c34860a44b35
+size 781

@@ -207,4 +207,6 @@ public class ItemAmount
         Item = item;
         Amount = amount;
     }
+
+    public bool IsEmpty() => Item == null;
 }
