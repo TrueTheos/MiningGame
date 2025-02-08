@@ -12,7 +12,17 @@ public abstract class Item : MonoBehaviour
     public virtual void EndUse() { }
     public virtual void UseOnce() { }
 
-    public static bool operator ==(Item left, Item right)
+    public bool EqualsType(Item right)
+    {
+        return Name == right.Name;
+    }
+
+    public bool EqualsInstance(Item item)
+    {
+        return item.GetInstanceID() == GetInstanceID();
+    }
+
+    /*public static bool operator ==(Item left, Item right)
     {
         if (object.ReferenceEquals(left, null) && object.ReferenceEquals(right, null))
             return true;
@@ -36,5 +46,5 @@ public abstract class Item : MonoBehaviour
     public override int GetHashCode()
     {
         return Name?.GetHashCode() ?? 0;
-    }
+    }*/
 }

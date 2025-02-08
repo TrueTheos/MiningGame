@@ -10,8 +10,13 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     [Header("UI & Slot Info")]
     [SerializeField] private Image _icon;
     [SerializeField] private TextMeshProUGUI _quantityText;
+    [SerializeField] private bool _equipmentSlot;
+    public bool EquipmentSlot => _equipmentSlot;
+
+    public ItemAmount ItemAmount { get; private set; }
 
     [HideInInspector] public int SlotIndex;
+
     private CanvasGroup _canvasGroup;
     private RectTransform _rectTransform;
     private Vector3 _originalPosition;
@@ -27,8 +32,8 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _originalPosition = _rectTransform.position;
         _canvas = GetComponentInParent<Canvas>();
         _icon.enabled = false;
-
         _originalParent = transform.parent;
+        ItemAmount = new ItemAmount(null, 0);
     }
 
     private void Start()
@@ -36,10 +41,43 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _inventory = Inventory.Instance;
     }
 
+    public void SetItem(ItemAmount itemAmount)
+    {
+        if (ItemAmount?.Item != null && ItemAmount.Item is EquipableItem previousEquipable) previousEquipable.Unequip();
+        ItemAmount = itemAmount;
+        if (ItemAmount?.Item != null && ItemAmount.Item is EquipableItem newEquipable) newEquipable.Equip();
+        UpdateSlotUI();
+    }
+
+    public void ClearSlot()
+    {
+        if(ItemAmount.Item != null) Destroy(ItemAmount.Item.gameObject);
+        ItemAmount = new ItemAmount(null, 0);
+        UpdateSlotUI();
+    }
+
+    public void AddAmount(int amount)
+    {
+        ItemAmount.Amount += amount;
+        UpdateSlotUI();
+    }
+
+    public void RemoveAmount(int amount)
+    {
+        ItemAmount.Amount -= amount;
+        if(ItemAmount.Amount <= 0)
+        {
+            ClearSlot();
+        }
+        else
+        {
+            UpdateSlotUI();
+        }
+    }
+
     public void UpdateSlotUI()
     {
-        ItemAmount slot = _inventory.Items[SlotIndex];
-        if (slot.IsEmpty())
+        if (ItemAmount.IsEmpty())
         {
             _icon.enabled = false;
             _quantityText.text = "";
@@ -47,8 +85,8 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         else
         {
             _icon.enabled = true;
-            _icon.sprite = slot.Item.SpriteRend.sprite;
-            _quantityText.text = slot.Amount > 1 ? slot.Amount.ToString() : "";
+            _icon.sprite = ItemAmount.Item.SpriteRend.sprite;
+            _quantityText.text = ItemAmount.Amount > 1 ? ItemAmount.Amount.ToString() : "";
         }
 
         if (transform.parent != _originalParent)
@@ -58,19 +96,25 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _rectTransform.anchoredPosition = Vector2.zero;
     }
 
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Right && !ItemAmount.IsEmpty())
+        {
+            if (ItemAmount.Item is EquipableItem equipableItem)
+            {
+                equipableItem.ToggleEquip();
+            }
+        }
+    }
+
     public void OnBeginDrag(PointerEventData eventData)
     {
-        ItemAmount slot = _inventory.Items[SlotIndex];
-        if (slot.IsEmpty())
-            return;
+        if(ItemAmount.IsEmpty()) return;
 
         _canvasGroup.alpha = 0.6f;
         _canvasGroup.blocksRaycasts = false;
-
-        // Store original parent
         _originalParent = transform.parent;
 
-        // Calculate offset between mouse position and rect center
         Vector2 mousePos;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             _rectTransform,
@@ -79,7 +123,6 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             out mousePos);
         _dragOffset = mousePos;
 
-        // Move to canvas for dragging
         transform.SetParent(_canvas.transform);
         transform.SetAsLastSibling();
     }
@@ -102,8 +145,6 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         _canvasGroup.alpha = 1f;
         _canvasGroup.blocksRaycasts = true;
-
-        // If not dropped on a valid target, return to original position
         transform.SetParent(_originalParent);
         _rectTransform.anchoredPosition = Vector2.zero;
     }
@@ -115,9 +156,7 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         InventorySlotUI draggedSlotUI = eventData.pointerDrag.GetComponent<InventorySlotUI>();
         if (draggedSlotUI != null && draggedSlotUI != this)
         {
-            _inventory.MoveItem(draggedSlotUI.SlotIndex, this.SlotIndex);
-            draggedSlotUI.UpdateSlotUI();
-            UpdateSlotUI();
+            _inventory.MoveItem(draggedSlotUI, this);
         }
     }
 }

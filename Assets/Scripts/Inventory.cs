@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using static UnityEditor.Progress;
 
 public class Inventory : MonoBehaviour
@@ -15,8 +16,9 @@ public class Inventory : MonoBehaviour
     [SerializeField] private int slotCount;
     [SerializeField] private GameObject _slotPrefab;
     [SerializeField] private Transform _slotsParent;
+    [SerializeField] private List<InventorySlotUI> _equipmentSlots = new();
     private List<InventorySlotUI> _slotsUI = new();
-    public ItemAmount[] Items;
+    private int _currentSlotIndex = 0;
 
     private void Awake()
     {
@@ -27,11 +29,8 @@ public class Inventory : MonoBehaviour
         }
         Instance = this;
 
-        Items = new ItemAmount[slotCount];
-
         for (int i = 0; i < slotCount; i++)
         {
-            Items[i] = new(null, 0);
             var newSlot = Instantiate(_slotPrefab, _slotsParent.transform);
             InventorySlotUI slotUI = newSlot.GetComponentInChildren<InventorySlotUI>();
             slotUI.SlotIndex = i;
@@ -52,29 +51,63 @@ public class Inventory : MonoBehaviour
         {
             AddItem(startItem);
         }
+
+        ChangeItem(_currentSlotIndex);
     }
 
     private void Update()
     {
+        for (int i = 1; i <= 8; i++)
+        {
+            if (Input.GetKeyDown(i.ToString()))
+            {
+                _currentSlotIndex = i - 1;
+                ChangeItem(_currentSlotIndex);
+            }
+        }
+
+        foreach (var slot in _equipmentSlots)
+        {
+            if (!slot.ItemAmount.IsEmpty() && slot.ItemAmount.Item is EquipableItem equipable)
+            {
+                equipable.Tick();
+            }
+        }
+
         HandleItemUse();
     }
 
-    public void RemoveOne() { }
+    public void RemoveOne()
+    {
+        var currentSlot = _slotsUI[_currentSlotIndex];
+        if (!currentSlot.ItemAmount.IsEmpty())
+        {
+            currentSlot.RemoveAmount(1);
+            if (currentSlot.ItemAmount == null || currentSlot.ItemAmount.IsEmpty() && currentSlot.ItemAmount.Item.EqualsInstance(CurrentItem))
+            {
+                CurrentItem = null;
+            }
+        }
+    }
+
     private void HandleItemUse()
     {
         if (CurrentItem == null) return;
 
-        if (Input.GetMouseButtonDown(0))
+        if (!EventSystem.current.IsPointerOverGameObject())
         {
-            CurrentItem.UseOnce();
-        }
-        if (Input.GetMouseButton(0))
-        {
-            CurrentItem.Holding();
-        }
-        if (Input.GetMouseButtonUp(0))
-        {
-            CurrentItem.EndUse();
+            if (Input.GetMouseButtonDown(0))
+            {
+                CurrentItem?.UseOnce();
+            }
+            if (Input.GetMouseButton(0))
+            {
+                CurrentItem?.Holding();
+            }
+            if (Input.GetMouseButtonUp(0))
+            {
+                CurrentItem?.EndUse();
+            }
         }
     }
 
@@ -83,10 +116,12 @@ public class Inventory : MonoBehaviour
         foreach (var req in requirements)
         {
             int total = 0;
-            for (int i = 0; i < Items.Length; i++)
+            foreach (var slot in _slotsUI)
             {
-                if (!Items[i].IsEmpty() && Items[i].Item == req.Item)
-                    total += Items[i].Amount;
+                if (!slot.ItemAmount.IsEmpty() && slot.ItemAmount.Item.EqualsType(req.Item))
+                {
+                    total += slot.ItemAmount.Amount;
+                }
             }
             if (total < req.Amount)
             {
@@ -98,103 +133,87 @@ public class Inventory : MonoBehaviour
         foreach (var req in requirements)
         {
             int toRemove = req.Amount;
-            for (int i = 0; i < Items.Length; i++)
+            foreach (var slot in _slotsUI)
             {
-                if (!Items[i].IsEmpty() && Items[i].Item == req.Item)
+                if (!slot.ItemAmount.IsEmpty() && slot.ItemAmount.Item.EqualsType(req.Item))
                 {
-                    if (Items[i].Amount > toRemove)
+                    if (slot.ItemAmount.Amount > toRemove)
                     {
-                        Items[i].Amount -= toRemove;
-                        toRemove = 0;
+                        slot.RemoveAmount(toRemove);
                         break;
                     }
                     else
                     {
-                        toRemove -= Items[i].Amount;
-                        Destroy(Items[i].Item.gameObject);
-                        Items[i].Item = null;
-                        Items[i].Amount = 0;
+                        toRemove -= slot.ItemAmount.Amount;
+                        slot.ClearSlot();
                     }
                 }
             }
         }
 
-        RefreshAllSlotUIs();
-
         return true;
     }
 
-    public void RefreshAllSlotUIs()
+    public void MoveItem(InventorySlotUI fromSlot, InventorySlotUI toSlot)
     {
-        foreach (InventorySlotUI slotUI in _slotsUI)
-        {
-            slotUI.UpdateSlotUI();
-        }
-    }
-
-    public void SwapSlots(int indexA, int indexB)
-    {
-        ItemAmount temp = Items[indexA];
-        Items[indexA] = Items[indexB];
-        Items[indexB] = temp;
-
-        RefreshAllSlotUIs();
-    }
-
-    public void MoveItem(int fromIndex, int toIndex)
-    {
-        ItemAmount fromSlot = Items[fromIndex];
-        ItemAmount toSlot = Items[toIndex];
-
-        if (fromSlot.IsEmpty())
+        if (fromSlot.ItemAmount.IsEmpty())
             return;
 
-        if (toSlot.IsEmpty())
+        if (toSlot.EquipmentSlot && fromSlot.ItemAmount.Item is not EquipableItem) return;
+
+        if (toSlot.ItemAmount.IsEmpty())
         {
-            // Move item to the empty slot.
-            Items[toIndex] = fromSlot;
-            Items[fromIndex] = new ItemAmount(null, 0);
+            // Move item to empty slot
+            var newItem = Instantiate(fromSlot.ItemAmount.Item.gameObject, toSlot.gameObject.transform);
+            newItem.SetActive(false);
+            toSlot.SetItem(new ItemAmount(newItem.GetComponent<Item>(), fromSlot.ItemAmount.Amount));
+            fromSlot.ClearSlot();
         }
-        else if (toSlot.Item == fromSlot.Item)
+        else if (toSlot.ItemAmount.Item.EqualsType(fromSlot.ItemAmount.Item))
         {
-            // Same item type: stack them.
-            int total = fromSlot.Amount + toSlot.Amount;
+            // Stack items
+            int total = fromSlot.ItemAmount.Amount + toSlot.ItemAmount.Amount;
             if (total <= 100)
             {
-                toSlot.Amount = total;
-                Items[fromIndex] = new ItemAmount(null, 0);
+                toSlot.AddAmount(fromSlot.ItemAmount.Amount);
+                fromSlot.ClearSlot();
             }
             else
             {
-                toSlot.Amount = 100;
-                fromSlot.Amount = total - 100;
+                toSlot.ItemAmount.Amount = 100;
+                fromSlot.ItemAmount.Amount = total - 100;
+                toSlot.UpdateSlotUI();
+                fromSlot.UpdateSlotUI();
             }
         }
         else
         {
-            SwapSlots(fromIndex, toIndex);
+            // Swap iems
+            var tempItemAmount = new ItemAmount(toSlot.ItemAmount.Item, toSlot.ItemAmount.Amount);
+            toSlot.SetItem(new ItemAmount(fromSlot.ItemAmount.Item, fromSlot.ItemAmount.Amount));
+            fromSlot.SetItem(tempItemAmount);
         }
-
-        RefreshAllSlotUIs();
     }
 
-    private void ChangeItem(Item item)
+    private void ChangeItem(int slotIndex)
     {
+        var slot = _slotsUI[slotIndex];
+
         if (CurrentItem != null)
         {
+            CurrentItem.gameObject.transform.SetParent(slot.transform);
             CurrentItem.gameObject.SetActive(false);
         }
 
-        if (item != null && _hand != null)
+        if (!slot.ItemAmount.IsEmpty() && _hand != null)
         {
-            // Create a new instance of the item instead of reusing the existing one
-            CurrentItem = item;
+            CurrentItem = slot.ItemAmount.Item;
+            CurrentItem.gameObject.transform.SetParent(_hand.transform);
             CurrentItem.gameObject.SetActive(true);
             CurrentItem.gameObject.transform.localPosition = Vector3.zero;
         }
         else
         {
-            Destroy(CurrentItem.gameObject);
             CurrentItem = null;
         }
     }
@@ -206,35 +225,32 @@ public class Inventory : MonoBehaviour
         Item item = itemAmount.Item;
         int remaining = itemAmount.Amount;
 
-        for (int i = 0; i < Items.Length; i++)
+        // First try to stack with existing items
+        foreach (var slot in _slotsUI)
         {
-            if (!Items[i].IsEmpty() && Items[i].Item == item)
+            if (!slot.ItemAmount.IsEmpty() && slot.ItemAmount.Item.EqualsType(item))
             {
-                int canAdd = 100 - Items[i].Amount;
+                int canAdd = 100 - slot.ItemAmount.Amount;
                 if (canAdd > 0)
                 {
                     int add = Mathf.Min(canAdd, remaining);
-                    Items[i].Amount += add;
+                    slot.AddAmount(add);
                     remaining -= add;
-                    RefreshAllSlotUIs();
                     if (remaining <= 0)
                         return true;
                 }
             }
         }
 
-        for (int i = 0; i < Items.Length; i++)
+        foreach (var slot in _slotsUI)
         {
-            if (Items[i].IsEmpty())
+            if (slot.ItemAmount.IsEmpty())
             {
                 int add = Mathf.Min(100, remaining);
-
-                var newItem = Instantiate(item.gameObject, _hand.transform);
-                newItem.gameObject.SetActive(false);
-                Items[i].Item = newItem.GetComponent<Item>();
-                Items[i].Amount = add;
+                var newItem = Instantiate(item.gameObject, slot.transform);
+                newItem.SetActive(false);
+                slot.SetItem(new ItemAmount(newItem.GetComponent<Item>(), add));
                 remaining -= add;
-                RefreshAllSlotUIs();
                 if (remaining <= 0)
                     return true;
             }

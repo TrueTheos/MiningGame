@@ -1,8 +1,27 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 using static UnityEditor.Progress;
+
+public enum StatType { Speed, JumpPower, GravityScale}
+
+[Serializable]
+public struct StatModifier
+{
+    public Guid ID;
+    public StatType Type;
+    public float Value;
+
+    public StatModifier(StatType type, float value)
+    {
+        Type = type;
+        Value = value;
+        ID = Guid.NewGuid();
+    }
+}
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -15,40 +34,55 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float _jumpingPower;
     [SerializeField] private float _climbSpeed;
     [SerializeField] private float _webSlowdownFactor;
+    [SerializeField] private float _jumpBufferTime = 0.2f;
+    [SerializeField] private float _coyoteTime = 0.1f;
 
-    private Rigidbody2D _rb;
+    [Header("Components")]
     [SerializeField] private Transform _groundCheck;
     [SerializeField] private Animator _animator;
     [SerializeField] private LayerMask _groundLayer;
+    private Rigidbody2D _rb;
 
-    private float _horizontal;
-    private float _vertical;
-    private bool _isFacingRight = true;
-    private bool _isJumping;
-    private float _coyoteTime = 0.1f;
-    private float _coyoteTimeCounter;
+    #region States
+    private bool _wasFalling = false;
+    public bool IsFalling => _IsFalling();
+    public bool IsOnClimbable { get; private set; }
+    public bool IsClimbing  { get; private set; }
+    #endregion
 
     #region Statuses
     [HideInInspector] public bool InWeb;
     #endregion
 
-    private float _jumpBufferTime = 0.2f;
-    private float _jumpBufferCounter;
+    #region Events
+    public UnityEvent StartFallingEvent;
+    public UnityEvent StopFallingEvent;
+    #endregion
 
-    private bool _isOnClimbable;
-    private bool _isClimbing;
-
-    private float _originalGravityScale;
+    public Dictionary<Guid, StatModifier> StatModifiers = new();
 
     private float _currentSpeed => GetCurrentSpeed();
     private float _currentGravity => GetCurrentGravity();
     private float _currentJumpSpeed => GetCurrentJumpSpeed();
+
+    private float _horizontal;
+    private float _vertical;
+    private bool _isFacingRight = true;
+    private bool _isJumping;
+    private float _coyoteTimeCounter;
+    private float _jumpBufferCounter;
+    private float _originalGravityScale;
 
     private void Awake()
     {
         Instance = this;
         _rb = GetComponent<Rigidbody2D>();
         _originalGravityScale = _rb.gravityScale;
+    }
+
+    private bool _IsFalling()
+    {
+        return !IsClimbing && _rb.velocity.y < 0;
     }
 
     private float GetCurrentSpeed()
@@ -64,7 +98,9 @@ public class PlayerMovement : MonoBehaviour
     {
         float res = _originalGravityScale;
 
+        if (IsClimbing) return 0f;
         if (InWeb && _rb.velocity.y < 0) res *= _webSlowdownFactor;
+        res *= GetStatModifiers(StatType.GravityScale);
 
         return res;
     }
@@ -74,6 +110,29 @@ public class PlayerMovement : MonoBehaviour
         float res = _jumpingPower;
 
         if (InWeb) res *= _webSlowdownFactor * 1.5f;
+        res *= GetStatModifiers(StatType.JumpPower);
+
+        return res;
+    }
+
+    public void AddModifier(StatModifier modifier)
+    {
+        StatModifiers[modifier.ID] = modifier;
+    }
+
+    public void RemoveModifier(Guid modifierId)
+    {
+        StatModifiers.Remove(modifierId);
+    }
+
+    public float GetStatModifiers(StatType type)
+    {
+        float res = 1f;
+
+        foreach (StatModifier modifier in StatModifiers.Values.Where(x => x.Type == type))
+        {
+            res *= modifier.Value;
+        }
 
         return res;
     }
@@ -86,9 +145,15 @@ public class PlayerMovement : MonoBehaviour
         _horizontal = Input.GetAxisRaw("Horizontal");
         _vertical = Input.GetAxisRaw("Vertical");
 
-        if (_isOnClimbable && Mathf.Abs(_vertical) > 0f)
+        if (IsFalling && !_wasFalling) StartFallingEvent?.Invoke();
+        else if(!IsFalling && _wasFalling) StopFallingEvent?.Invoke();
+        _wasFalling = IsFalling;
+
+        _rb.gravityScale = _currentGravity;
+
+        if (IsOnClimbable && Mathf.Abs(_vertical) > 0f)
         {
-            _isClimbing = true;
+            IsClimbing = true;
         }
 
         if (IsGrounded())
@@ -130,16 +195,13 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (_isClimbing)
+        if (IsClimbing)
         {
-            _rb.gravityScale = 0f;
             float currentClimbSpeed = InWeb ? _climbSpeed * _webSlowdownFactor : _climbSpeed;
             _rb.velocity = new Vector2(_horizontal * _currentSpeed, _vertical * currentClimbSpeed);
         }
         else
         {
-            _rb.gravityScale = _currentGravity;
-
             _rb.velocity = new Vector2(_horizontal * _currentSpeed, _rb.velocity.y);
         }
 
@@ -182,7 +244,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (collision.tag == "Climbable")
         {
-            _isOnClimbable = true;
+            IsOnClimbable = true;
         }
     }
 
@@ -190,8 +252,8 @@ public class PlayerMovement : MonoBehaviour
     {
         if (collision.tag == "Climbable")
         {
-            _isOnClimbable = false;
-            _isClimbing = false;
+            IsOnClimbable = false;
+            IsClimbing = false;
         }
     }
 }

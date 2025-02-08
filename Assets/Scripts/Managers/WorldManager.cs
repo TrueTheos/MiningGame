@@ -205,6 +205,7 @@ public class WorldManager : MonoBehaviour
 
         _durabilityLeft.Remove(new Vector2Int(x, y));
 
+        if (x < 0 || x >= WorldWidth || y < 0 || y >= WorldHeight) return;
         if (WorldData[x, y] != null)
         {  
             Vector3 worldPosition = MainTilemap.CellToWorld(tilePosition);
