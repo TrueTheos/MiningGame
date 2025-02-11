@@ -23,6 +23,7 @@ public abstract class PlacableItem : Item
     public bool dropItself = true;
     public ItemAmount drop;
     public bool canBeDestroyedToReplace;
+    public List<Color> ParticleColors = new();
 
     [HideInInspector] public Vector2Int Pos;
 
@@ -51,22 +52,34 @@ public abstract class PlacableItem : Item
                 if (building != null)
                 {
                     building.DestroyIfInvalid();
-
                 }
             }
         }
 
+        if (ParticleColors != null && ParticleColors.Count > 0)
+        {
+            var particle = Instantiate(WorldManager.Instance.DestroyTileParticle, new Vector3(Pos.x + .5f, Pos.y + .5f, 0), Quaternion.identity);
+            particle.startColor = ParticleColors.Random();
+            particle.Play();
+            particle.Emit(Random.Range(3, 8));
+        }
         Destroy(gameObject);
     }
-
 
     public void DestroyIfInvalid()
     {
         if (!destroyWhenSupportDestroyed) return;
         if (!IsPlacementValid(Pos.x, Pos.y))
         {
-            WorldManager.Instance.BreakTile(Pos.x, Pos.y);
+            StartCoroutine(_DelayedDestroyIfInvalid());
         }
+    }
+
+    private IEnumerator _DelayedDestroyIfInvalid()
+    {
+        yield return new WaitForSeconds(0.05f);
+
+        WorldManager.Instance.BreakTile(Pos.x, Pos.y);
     }
 
     public bool IsPlacementValid(int x, int y)

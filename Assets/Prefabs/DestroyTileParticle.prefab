@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3362314198538771938}
   - component: {fileID: 4478853662604279835}
   m_Layer: 8
-  m_Name: TileBreak
+  m_Name: DestroyTileParticle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

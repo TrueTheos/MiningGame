@@ -21,6 +21,7 @@ public class WorldManager : MonoBehaviour
 
     [SerializeField] private GameObject _player;
     [SerializeField] private ParticleSystem _destroyTileParticle;
+    public ParticleSystem DestroyTileParticle => _destroyTileParticle;
     [SerializeField] private PickupableItem _pickupableItem;
     [SerializeField] private TileBuildableItem _tileBuildableItem;
     [SerializeField] private int _playerShowTileRadius;

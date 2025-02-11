@@ -55,6 +55,9 @@ MonoBehaviour:
     Item: {fileID: 0}
     Amount: 0
   canBeDestroyedToReplace: 1
+  ParticleColors:
+  - {r: 0.41960788, g: 0.41960788, b: 0.41960788, a: 1}
+  - {r: 0.45098042, g: 0.45098042, b: 0.45098042, a: 1}
   Pos: {x: 0, y: 0}
   Solid: 0
   Durability: 1
