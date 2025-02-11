@@ -14,4 +14,5 @@ public class TileSO : ScriptableObject
     public List<Color> ParticleColors = new();
     public ItemAmount Drop;
     public bool DropItself = true;
+    public float LightTransparency;
 }

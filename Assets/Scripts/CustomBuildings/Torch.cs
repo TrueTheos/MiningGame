@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Torch : CustomBuilding
 {
-    public int LightIntensity;
+    public float LightIntensity;
 
     public override void Place(int x, int y)
     {

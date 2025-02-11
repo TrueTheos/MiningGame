@@ -83,7 +83,8 @@ public class Inventory : MonoBehaviour
         if (!currentSlot.ItemAmount.IsEmpty())
         {
             currentSlot.RemoveAmount(1);
-            if (currentSlot.ItemAmount == null || currentSlot.ItemAmount.IsEmpty() && currentSlot.ItemAmount.Item.EqualsInstance(CurrentItem))
+            if (CurrentItem == null) return;
+            if (currentSlot.ItemAmount == null || currentSlot.ItemAmount.IsEmpty() || (currentSlot.ItemAmount.IsEmpty() && currentSlot.ItemAmount.Item.EqualsInstance(CurrentItem)))
             {
                 CurrentItem = null;
             }

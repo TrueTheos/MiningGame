@@ -1,3 +1,4 @@
+using Assets.Scripts.Managers.WorldGeneration;
 using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,6 +8,8 @@ using UnityEngine.U2D;
 using UnityEngine.UIElements;
 using UnityEngine.WSA;
 using static UnityEditor.PlayerSettings;
+
+public enum TilemapType { Main, Decorations}
 
 public class WorldManager : MonoBehaviour
 {
@@ -55,6 +58,7 @@ public class WorldManager : MonoBehaviour
 
     public bool IsEmpty(int x, int y)
     {
+        if(x <0 || x >= WorldWidth || y <0 || y >= WorldHeight) return false;
         return WorldData[x,y] == null && Buildings[x,y] == null;
     }
 
@@ -258,7 +262,14 @@ public class WorldManager : MonoBehaviour
 
         Buildings[x, y] = newBuilding;
         newBuilding.Pos = new Vector2Int(x, y);
+    }
 
+    public void TryPlace(int x, int y, CustomBuilding building)
+    {
+        if (!building.IsPlacementValid(x, y)) return;
+        if (!IsEmpty(x, y)) return;
+
+        PlaceBuilding(x,y,building);
     }
 
     public void SetTile(int x, int y, TileSO tile, bool showTile = true)

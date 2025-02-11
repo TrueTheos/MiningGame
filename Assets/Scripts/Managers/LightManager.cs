@@ -12,9 +12,10 @@ public class LightManager : MonoBehaviour
     [SerializeField] private int _tileSize = 8;
     [SerializeField] private float _playerLightRadius = 5f;
     [SerializeField] private float _playerLightIntensity = 1.0f;
-    [SerializeField] private float _lightLoseRate = .5f;
+    [SerializeField] private float _lightLoseRate;
     [SerializeField] private float _wallLightLoseRate = .2f;
-    [SerializeField] private GameObject _player;
+    [SerializeField] private PlayerMovement _player;
+    [SerializeField] private Material _smoothingMaterial;
 
     private float[,] _lightMap;
     private Dictionary<Vector2Int, float> _persistentLights = new Dictionary<Vector2Int, float>();
@@ -54,6 +55,7 @@ public class LightManager : MonoBehaviour
             _lightTexture,
             new Rect(0, 0, _textureWidth, _textureHeight),
             new Vector2(0.5f, 0.5f));
+        _lightRenderer.material = _smoothingMaterial;
         // Position the overlay at the center of the texture region in world space.
         _lightRenderer.transform.position = new Vector2(_texOriginX + _textureWidth / 2f,
                                                           _texOriginY + _textureHeight / 2f);
@@ -93,22 +95,18 @@ public class LightManager : MonoBehaviour
                 _lightTexture,
                 new Rect(0, 0, _textureWidth, _textureHeight),
                 new Vector2(0.5f, 0.5f));
-            _lightRenderer.transform.position = new Vector2(_texOriginX + _textureWidth / 2f,
-                                                              _texOriginY + _textureHeight / 2f);
-        }
-
-        if(Input.GetMouseButtonDown(1))
-        {
-            Vector2 mousePos = Input.mousePosition;
+            _lightRenderer.transform.position = new Vector2(_texOriginX + (_textureWidth / 2f),
+                                                              _texOriginY + (_textureHeight / 2f));
         }
 
         UpdateLighting();
     }
 
+    private List<(Vector3, bool)> _drawLights = new();
+
     void UpdateLighting()
     {
-        Vector2 playerPos = _player.transform.position;
-
+        _drawLights = new();
         // Loop through only the tiles within the current texture region.
         for (int y = 0; y < _textureHeight; y++)
         {
@@ -120,7 +118,7 @@ public class LightManager : MonoBehaviour
                 // Ensure we’re within the bounds of the world.
                 if (worldX >= 0 && worldY >= 0 && worldX < _worldWidth && worldY < _worldHeight)
                 {
-                    ComputeLightForTile(worldX, worldY, playerPos);
+                    ComputeLightForTile(worldX, worldY);
                 }
             }
         }
@@ -150,49 +148,54 @@ public class LightManager : MonoBehaviour
         }
     }
 
-    void ComputeLightForTile(int x, int y, Vector2 playerPos)
+    void ComputeLightForTile(int x, int y)
     {
         float light = 0f;
         Vector2Int currentTile = new Vector2Int(x, y);
-        foreach (var lightSource in _persistentLights)
+        if(_persistentLights.ContainsKey(currentTile))
+        {
+            light = Mathf.Max(light, _persistentLights[currentTile]);
+        }
+        /*foreach (var lightSource in _persistentLights)
         {
             float dist = Vector2.Distance(currentTile, lightSource.Key);
             if (dist < lightSource.Value * 2) // Light radius is twice the power
             {
                 bool visible = HasLineOfSight(lightSource.Key.x, lightSource.Key.y, x, y);
+                visible = true;
                 float intensityMultiplier = visible ? 1f : _wallLightLoseRate;
                 float sourceLight = lightSource.Value * (1f - (dist / (lightSource.Value * 2))) * intensityMultiplier;
                 light = Mathf.Max(light, sourceLight);
             }
-        }
+        }*/
 
         // Player light (using tile centers)
-        float tileCenterX = x + 0.5f;
-        float tileCenterY = y + 0.5f;
-        float distPlayer = Vector2.Distance(new Vector2(tileCenterX, tileCenterY), playerPos);
+
+        /*float distPlayer = Vector2.Distance(new Vector2(tileCenterX, tileCenterY), _player.Pos);
         if (distPlayer < _playerLightRadius)
         {
-            bool visible = HasLineOfSight(PlayerMovement.Instance.X, PlayerMovement.Instance.Y, x, y);
-            float intensityMultiplier = visible ? 1f : _wallLightLoseRate;
-
-            float playerLight = 0;
-
-            /*if (!visible)
+            bool visible;
+            // If this is the player's tile, force visibility.
+            if (_player.X == x && _player.Y == y)
             {
-                if (distPlayer >= _playerLightRadius) playerLight = 0f;
-                else if (distPlayer < 1) playerLight = .2f;
-                else if (distPlayer < 2) playerLight = .1f;
-                else if (distPlayer < 3) playerLight = .05f;
+                visible = true;
             }
             else
             {
-                playerLight = _playerLightIntensity * (1f - (distPlayer / _playerLightRadius)) * intensityMultiplier;
-            }*/
-            playerLight = _playerLightIntensity * (1f - (distPlayer / _playerLightRadius)) * intensityMultiplier;
+                visible = HasLineOfSight(PlayerMovement.Instance.X + 1, PlayerMovement.Instance.Y + 1, x, y);
+            }
+
+           // visible = true;
+
+            _drawLights.Add((new Vector3(tileCenterX, tileCenterY, 0), visible));
+
+            float intensityMultiplier = visible ? 1f : _wallLightLoseRate;
+            float playerLight = _playerLightIntensity * (1f - (distPlayer / _playerLightRadius)) * intensityMultiplier;
             light = Mathf.Max(light, playerLight);
-        }
+        }*/
 
         // Spread light from nearby tiles.
+
         for (int dx = -1; dx <= 1; dx++)
         {
             for (int dy = -1; dy <= 1; dy++)
@@ -201,16 +204,17 @@ public class LightManager : MonoBehaviour
                 int ny = y + dy;
                 if (nx >= 0 && ny >= 0 && nx < _worldWidth && ny < _worldHeight)
                 {
-                    if(!_worldManager.IsLightBlocker(nx,ny)) light = Mathf.Max(light, _lightMap[nx, ny] * 0.85f);
+                    if(!_worldManager.IsLightBlocker(nx,ny)) light = Mathf.Max(light, _lightMap[nx, ny] * _lightLoseRate);
+                    else light = Mathf.Max(light, _lightMap[nx, ny] * _wallLightLoseRate);
                 }
             }
         }
 
         // Obstruct light if the tile is occupied.
-        if (_worldManager.WorldData[x, y] != null)
-            light *= _lightLoseRate;
+        if (_worldManager.IsLightBlocker(x, y))
+            light *= _wallLightLoseRate;
 
-        float clampedLight = Mathf.Clamp01(light);
+        float clampedLight = light;
 
         var building = _worldManager.Buildings[x, y];
         if (building != null)
@@ -221,39 +225,56 @@ public class LightManager : MonoBehaviour
         _lightMap[x, y] = clampedLight;
     }
 
-    bool HasLineOfSight(int x0, int y0, int x1, int y1)
+    public void OnDrawGizmos()
     {
-        int dx = Mathf.Abs(x1 - x0);
-        int dy = Mathf.Abs(y1 - y0);
-        int sx = (x0 < x1) ? 1 : -1;
-        int sy = (y0 < y1) ? 1 : -1;
-        int err = dx - dy;
-
-        while (true)
+        foreach (var item in _drawLights)
         {
-            if (_worldManager.WorldData[x0, y0] != null)
+            if(item.Item2)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(item.Item1, .5f);
+            }
+            else
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(item.Item1, .5f);
+            }
+        }
+    }
+
+    /*bool HasLineOfSight(int x0, int y0, int x1, int y1)
+    {
+        int dx = x1 - x0;
+        int dy = y1 - y0;
+
+        int steps = Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy));
+
+        float xIncrement = dx / (float)steps;
+        float yIncrement = dy / (float)steps;
+
+        float x = x0;
+        float y = y0;
+
+        // Skip the first iteration
+        bool firstIteration = true;
+        for (int i = 0; i <= steps; i++)
+        {
+            int tileX = Mathf.RoundToInt(x);
+            int tileY = Mathf.RoundToInt(y);
+
+            if (!firstIteration && _worldManager.IsLightBlocker(tileX, tileY))
             {
                 return false;
             }
+            firstIteration = false;
 
-            // Reached the target tile?
-            if (x0 == x1 && y0 == y1)
-                break;
-
-            int e2 = 2 * err;
-            if (e2 > -dy)
-            {
-                err -= dy;
-                x0 += sx;
-            }
-            if (e2 < dx)
-            {
-                err += dx;
-                y0 += sy;
-            }
+            x += xIncrement;
+            y += yIncrement;
         }
+
         return true;
-    }
+    }*/
+
 
     void ApplyLightingToTexture()
     {
@@ -268,7 +289,7 @@ public class LightManager : MonoBehaviour
                 int worldY = _texOriginY + y;
                 float light = 0f;
                 if (worldX >= 0 && worldY >= 0 && worldX < _worldWidth && worldY < _worldHeight)
-                    light = _lightMap[worldX, worldY];
+                    light = Mathf.Clamp01(_lightMap[worldX, worldY]);
 
                 // Set the pixel’s alpha based on the light (darker where light is lower).
                 colors[i++] = new Color(0, 0, 0, 1 - light);

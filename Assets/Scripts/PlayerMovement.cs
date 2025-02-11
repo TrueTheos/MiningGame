@@ -30,6 +30,8 @@ public class PlayerMovement : MonoBehaviour
     public int X { get; private set; }
     public int Y { get; private set; }
 
+    public Vector2Int Pos => new Vector2Int(X, Y);
+
     [SerializeField] private float _speed;
     [SerializeField] private float _jumpingPower;
     [SerializeField] private float _climbSpeed;

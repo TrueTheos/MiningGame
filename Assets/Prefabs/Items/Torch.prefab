@@ -47,7 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Torch
   SpriteRend: {fileID: 4478670608722118212}
-  allowedPlacements: 2
+  allowedPlacements: 18
   destroyWhenSupportDestroyed: 1
   dropItself: 1
   drop:
@@ -56,7 +56,7 @@ MonoBehaviour:
   Pos: {x: 0, y: 0}
   Solid: 0
   Durability: 1
-  LightIntensity: 3
+  LightIntensity: 1.5
 --- !u!1 &9103307065011269696
 GameObject:
   m_ObjectHideFlags: 0
