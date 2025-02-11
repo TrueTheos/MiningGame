@@ -22,6 +22,7 @@ public class PickupableItem : Item
     public void PickUp()
     {
         Inventory.Instance.AddItem(Drop);
+        AudioManager.Instance.PlayPickup();
         Destroy(Drop.Item.gameObject);
         Destroy(gameObject);
     }

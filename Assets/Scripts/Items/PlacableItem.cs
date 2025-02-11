@@ -48,9 +48,10 @@ public abstract class PlacableItem : Item
 
                 var building = WorldManager.Instance.Buildings[x, y];
 
-                if(building != null)
+                if (building != null)
                 {
                     building.DestroyIfInvalid();
+
                 }
             }
         }
@@ -58,12 +59,13 @@ public abstract class PlacableItem : Item
         Destroy(gameObject);
     }
 
+
     public void DestroyIfInvalid()
     {
         if (!destroyWhenSupportDestroyed) return;
         if (!IsPlacementValid(Pos.x, Pos.y))
         {
-            OnBreak();
+            WorldManager.Instance.BreakTile(Pos.x, Pos.y);
         }
     }
 
@@ -144,8 +146,6 @@ public abstract class PlacableItem : Item
             return true;
         if (allowedPlacements.HasFlag(PlacementType.Ceiling) && CheckCeiling(x, y))
             return true;
-        if (allowedPlacements.HasFlag(PlacementType.NeedsSupport))
-            return CheckGround(x, y) || CheckWall(x, y) || CheckCeiling(x, y);
 
         return false;
     }

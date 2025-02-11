@@ -231,8 +231,20 @@ public class WorldManager : MonoBehaviour
             {
                 SpawnPickupable(tilePosition.x + .5f, tilePosition.y + .5f, WorldData[x, y].Drop);
             }
-            Destroy(particle.gameObject, particle.startLifetime);
+
             SetTile(x, y, null);
+
+            for (int nx = x - 1; nx < x + 1; nx++)
+            {
+                for (int ny = y - 1; ny < y + 1; ny++)
+                {
+                    if (nx < 0 || ny < 0 || nx >= WorldWidth || ny >= WorldHeight) continue;
+                    var building = Buildings[nx, ny];
+
+                    if (building != null) building.DestroyIfInvalid();
+                }
+            }
+            Destroy(particle.gameObject, particle.startLifetime);
         }
 
         if (Buildings[x,y] != null)
@@ -243,9 +255,10 @@ public class WorldManager : MonoBehaviour
                 clone.SetActive(false);
                 SpawnPickupable(tilePosition.x + .5f, tilePosition.y + .5f, new ItemAmount(clone.GetComponent<Item>(), 1));
             }
-            if(Buildings[x, y].drop.Item != null) SpawnPickupable(tilePosition.x + .5f, tilePosition.y + .5f, Buildings[x, y].drop); 
-            Buildings[x, y].OnBreak();
+            if(Buildings[x, y].drop.Item != null) SpawnPickupable(tilePosition.x + .5f, tilePosition.y + .5f, Buildings[x, y].drop);
+            var building = Buildings[x, y];
             Buildings[x, y] = null;
+            building.OnBreak();
         }
     }
 
