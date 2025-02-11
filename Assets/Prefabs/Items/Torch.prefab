@@ -56,7 +56,9 @@ MonoBehaviour:
   Pos: {x: 0, y: 0}
   Solid: 0
   Durability: 1
-  LightIntensity: 1.5
+  source:
+    LightPower: 1.5
+    Color: {r: 1, g: 0.91478, b: 0.5518868, a: 1}
 --- !u!1 &9103307065011269696
 GameObject:
   m_ObjectHideFlags: 0

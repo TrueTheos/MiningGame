@@ -4,12 +4,11 @@ using UnityEngine;
 
 public class Torch : CustomBuilding
 {
-    public float LightIntensity;
+    public LightSource source;
 
-    public override void Place(int x, int y)
+    public override void OnPlace(int x, int y)
     {
-        base.Place(x, y);
-        LightManager.Instance.AddLight(x, y, LightIntensity);
+        LightManager.Instance.AddLight(x, y, source);
     }
 
     public override void OnBreak()

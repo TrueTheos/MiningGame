@@ -24,6 +24,7 @@ public class WorldManager : MonoBehaviour
     [SerializeField] private PickupableItem _pickupableItem;
     [SerializeField] private TileBuildableItem _tileBuildableItem;
     [SerializeField] private int _playerShowTileRadius;
+    [SerializeField] private Torch _torchPrefab;
 
     public readonly int CHUNK_SIZE = 64;
 
@@ -115,6 +116,8 @@ public class WorldManager : MonoBehaviour
         MainTilemap.GetComponent<TilemapCollider2D>().enabled = true;
         _player.transform.position = new Vector2(WorldWidth / 2, WorldHeight / 2);
         _player.gameObject.SetActive(true);
+
+        TryPlace(WorldWidth / 2, WorldHeight / 2 - 1, _torchPrefab);
 
         Ready = true;
     }
@@ -261,15 +264,32 @@ public class WorldManager : MonoBehaviour
         CustomBuilding newBuilding = Instantiate(building.gameObject, new Vector3(x + .5f, y + .5f, 0), Quaternion.identity).GetComponent<CustomBuilding>();
 
         Buildings[x, y] = newBuilding;
+        newBuilding.OnPlace(x,y);
         newBuilding.Pos = new Vector2Int(x, y);
     }
 
-    public void TryPlace(int x, int y, CustomBuilding building)
+    public bool TryPlace(int x, int y, CustomBuilding building)
     {
-        if (!building.IsPlacementValid(x, y)) return;
-        if (!IsEmpty(x, y)) return;
-
-        PlaceBuilding(x,y,building);
+        if(x < 0 || y < 0 || x >= WorldWidth || y >= WorldHeight) return false;
+        if (!building.IsPlacementValid(x, y)) return false;
+        if (!IsEmpty(x, y))
+        {
+            if (Buildings[x, y] != null && Buildings[x, y].canBeDestroyedToReplace)
+            {
+                BreakTile(x, y);
+                PlaceBuilding(x, y, building);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            PlaceBuilding(x, y, building);
+            return true;
+        }
     }
 
     public void SetTile(int x, int y, TileSO tile, bool showTile = true)

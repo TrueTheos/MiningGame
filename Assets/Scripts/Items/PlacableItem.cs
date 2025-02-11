@@ -22,10 +22,11 @@ public abstract class PlacableItem : Item
     [SerializeField] private bool destroyWhenSupportDestroyed = true;
     public bool dropItself = true;
     public ItemAmount drop;
+    public bool canBeDestroyedToReplace;
 
     [HideInInspector] public Vector2Int Pos;
 
-    public abstract void Place(int x, int y);
+    public virtual void OnPlace(int x, int y) { }
 
     public abstract bool CanPlace(int x, int y);
 

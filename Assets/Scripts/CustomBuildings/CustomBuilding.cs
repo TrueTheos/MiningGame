@@ -10,7 +10,9 @@ public class CustomBuilding : PlacableItem
     public override void UseOnce()
     {
         var pos = MousePosToTilePos();
-        Place(pos.x, pos.y);
+        bool result = WorldManager.Instance.TryPlace(pos.x, pos.y, this);
+
+        if(result) Inventory.Instance.RemoveOne();
     }
 
     public override bool CanPlace(int x, int y)
@@ -18,13 +20,5 @@ public class CustomBuilding : PlacableItem
         return WorldManager.Instance.GetTileAtMousePos() == null &&
             WorldManager.Instance.GetBuildingAtMousePos() == null &&
             IsPlacementValid(x, y);
-    }
-
-    public override void Place(int x, int y)
-    {
-        if (!CanPlace(x, y)) return;
-
-        WorldManager.Instance.PlaceBuilding(x, y, this);
-        Inventory.Instance.RemoveOne();
     }
 }

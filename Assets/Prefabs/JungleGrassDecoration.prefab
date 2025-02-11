@@ -105,6 +105,7 @@ MonoBehaviour:
   drop:
     Item: {fileID: 0}
     Amount: 0
+  canBeDestroyedToReplace: 1
   Pos: {x: 0, y: 0}
   Solid: 0
   Durability: 1
