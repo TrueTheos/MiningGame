@@ -19,6 +19,14 @@ public class PickupableItem : Item
         Destroy(gameObject, 60);
     }
 
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag == "Player")
+        {
+            PickUp();
+        }
+    }
+
     public void PickUp()
     {
         Inventory.Instance.AddItem(Drop);

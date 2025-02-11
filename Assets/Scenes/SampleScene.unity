@@ -10242,7 +10242,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 7.5
+  orthographic size: 11.25
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -10874,6 +10874,11 @@ MonoBehaviour:
   _webSlowdownFactor: 0.5
   _jumpBufferTime: 0.2
   _coyoteTime: 0.1
+  _attractionRadius: 2
+  _maxPickupSpeed: 5
+  _pickupableLayer:
+    serializedVersion: 2
+    m_Bits: 1024
   _groundCheck: {fileID: 899498368}
   _animator: {fileID: 302679741}
   _groundLayer:

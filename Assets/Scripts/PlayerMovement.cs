@@ -39,6 +39,14 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float _jumpBufferTime = 0.2f;
     [SerializeField] private float _coyoteTime = 0.1f;
 
+    [Header("Attraction Settings")]
+    [Tooltip("The radius within which pickups are attracted to the player.")]
+    [SerializeField] private float _attractionRadius = 5f;
+    [Tooltip("Maximum speed that a pickupable object can be attracted at.")]
+    [SerializeField] private float _maxPickupSpeed = 5f;
+    [Tooltip("Layer mask to identify pickupable objects.")]
+    [SerializeField] private LayerMask _pickupableLayer;
+
     [Header("Components")]
     [SerializeField] private Transform _groundCheck;
     [SerializeField] private Animator _animator;
@@ -208,6 +216,36 @@ public class PlayerMovement : MonoBehaviour
         }
 
         _animator.SetFloat("Movement", Mathf.Abs(_rb.velocity.x));
+
+        Collider2D[] pickupsInRange = Physics2D.OverlapCircleAll(transform.position, _attractionRadius, _pickupableLayer);
+
+        foreach (Collider2D pickupCollider in pickupsInRange)
+        {
+            Rigidbody2D pickupRb = pickupCollider.GetComponent<Rigidbody2D>();
+            if (pickupRb != null)
+            {
+                float verticalDistance = Mathf.Abs(transform.position.y - pickupCollider.transform.position.y);
+
+                if (verticalDistance > .4f)
+                    continue;
+
+                float horizontalDistance = transform.position.x - pickupCollider.transform.position.x;
+                float absHorizontalDistance = Mathf.Abs(horizontalDistance);
+
+                if (absHorizontalDistance > 0.01f)
+                {
+                    float directionX = Mathf.Sign(horizontalDistance);
+
+                    float speed = Mathf.Lerp(0, _maxPickupSpeed, 1 - (absHorizontalDistance / _attractionRadius));
+
+                    pickupRb.velocity = new Vector2(directionX * speed, pickupRb.velocity.y);
+                }
+                else
+                {
+                    pickupRb.velocity = new Vector2(0f, pickupRb.velocity.y);
+                }
+            }
+        }
     }
 
     private bool IsGrounded()
@@ -230,15 +268,6 @@ public class PlayerMovement : MonoBehaviour
             Vector3 localScale = transform.localScale;
             localScale.x *= -1f;
             transform.localScale = localScale;
-        }
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        var pickup = collision.gameObject.GetComponent<PickupableItem>();
-        if (pickup != null)
-        {
-            pickup.PickUp();
         }
     }
 
