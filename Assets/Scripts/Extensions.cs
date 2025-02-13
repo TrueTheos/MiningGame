@@ -21,4 +21,12 @@ public static class Extensions
     {
         return UnityEngine.Random.Range(vector.x, vector.y + 1);
     }
+
+    public static IEnumerable<Vector2Int> GetNeighbors(this Vector2Int tile)
+    {
+        yield return tile + Vector2Int.up;
+        yield return tile + Vector2Int.down;
+        yield return tile + Vector2Int.left;
+        yield return tile + Vector2Int.right;
+    }
 }

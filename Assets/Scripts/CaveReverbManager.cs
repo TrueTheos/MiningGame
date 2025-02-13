@@ -2,13 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class CustomReverbZone : MonoBehaviour
 {
     public AudioReverbZone reverbZone;
     public PolygonCollider2D zoneCollider;
-    public float currentIntensity = 0f;
-    public float targetIntensity = 0f;
 
     private static readonly ReverbParameters baseParameters = new ReverbParameters
     {
@@ -53,25 +52,16 @@ public class CustomReverbZone : MonoBehaviour
         reverbZone = gameObject.AddComponent<AudioReverbZone>();
         reverbZone.reverbPreset = AudioReverbPreset.User;
 
-        UpdateReverbIntensity(0f);
-    }
-
-    public void UpdateReverbIntensity(float intensity)
-    {
-        currentIntensity = intensity;
-
-        intensity = Mathf.Clamp01(intensity);
-
-        reverbZone.room = Mathf.RoundToInt(Mathf.Lerp(0, baseParameters.room, intensity));
-        reverbZone.roomHF = Mathf.RoundToInt(Mathf.Lerp(0, baseParameters.roomHF, intensity));
-        reverbZone.decayTime = Mathf.Lerp(0.1f, baseParameters.decayTime, intensity);
-        reverbZone.decayHFRatio = Mathf.Lerp(0.1f, baseParameters.decayHFRatio, intensity);
-        reverbZone.reflections = Mathf.RoundToInt(Mathf.Lerp(0, baseParameters.reflections, intensity));
-        reverbZone.reflectionsDelay = Mathf.Lerp(0, baseParameters.reflectionsDelay, intensity);
-        reverbZone.reverb = Mathf.RoundToInt(Mathf.Lerp(0, baseParameters.reverb, intensity));
-        reverbZone.reverbDelay = Mathf.Lerp(0, baseParameters.reverbDelay, intensity);
-        reverbZone.diffusion = Mathf.Lerp(0, baseParameters.diffusion, intensity);
-        reverbZone.density = Mathf.Lerp(0, baseParameters.density, intensity);
+        reverbZone.room = baseParameters.room;
+        reverbZone.roomHF = baseParameters.roomHF;
+        reverbZone.decayTime = baseParameters.decayTime;
+        reverbZone.decayHFRatio = baseParameters.decayHFRatio;
+        reverbZone.reflections = baseParameters.reflections;
+        reverbZone.reflectionsDelay = baseParameters.reflectionsDelay;
+        reverbZone.reverb = baseParameters.reverb;
+        reverbZone.reverbDelay = baseParameters.reverbDelay;
+        reverbZone.diffusion = baseParameters.diffusion;
+        reverbZone.density = baseParameters.density;
         reverbZone.HFReference = baseParameters.HFReference;
         reverbZone.LFReference = baseParameters.LFReference;
     }
@@ -79,22 +69,26 @@ public class CustomReverbZone : MonoBehaviour
 
 public class CaveReverbManager : MonoBehaviour
 {
+    public static CaveReverbManager Instance;
+
     [System.Serializable]
     public class ReverbSettings
     {
         [Header("Cave Size Settings")]
         public float minCaveSize = 50;
         public float maxCaveSize = 500;
-
-        [Header("Transition Settings")]
-        public float transitionSpeed = 2f;  // Seconds to transition between reverb states
-        public float updateInterval = 0.1f;  // How often to check player position
     }
 
     public ReverbSettings reverbSettings;
     private Dictionary<Vector2Int, int> tileToRegionMap = new Dictionary<Vector2Int, int>();
-    private Dictionary<int, CustomReverbZone> activeZones = new Dictionary<int, CustomReverbZone>();
+    private Dictionary<int, CustomReverbZone> zones = new Dictionary<int, CustomReverbZone>();
+    private Dictionary<int, HashSet<Vector2Int>> regionTiles = new Dictionary<int, HashSet<Vector2Int>>();
     private Transform playerTransform;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -102,35 +96,78 @@ public class CaveReverbManager : MonoBehaviour
         StartCoroutine(UpdateReverbRoutine());
     }
 
-    private System.Collections.IEnumerator UpdateReverbRoutine()
+    public void RecalculateZone(int x, int y)
+    {
+        Vector2Int changedTile = new Vector2Int(x, y);
+        List<int> affectedRegions = new List<int>();
+
+        // Check all stored regions to see if the changed tile is inside or adjacent.
+        foreach (var kvp in regionTiles)
+        {
+            int regionId = kvp.Key;
+            HashSet<Vector2Int> region = kvp.Value;
+
+            // Check if the changed tile is in the region or touches it.
+            if (region.Contains(changedTile) ||
+                changedTile.GetNeighbors().Any(n => region.Contains(n)))
+            {
+                affectedRegions.Add(regionId);
+            }
+        }
+
+        // For each affected region, recalculate the zone.
+        foreach (int id in affectedRegions)
+        {
+            // Remove the old zone.
+            if (zones.TryGetValue(id, out CustomReverbZone zone))
+            {
+                Destroy(zone.gameObject);
+                zones.Remove(id);
+            }
+            regionTiles.Remove(id);
+
+            // If the changed tile now represents an open space, recalc the region
+            if (WorldManager.Instance.WorldData[x, y] == null)
+            {
+                var newRegion = FloodFillRegion(changedTile, id, WorldManager.Instance.WorldData);
+                if (newRegion.Count >= reverbSettings.minCaveSize)
+                {
+                    CreateReverbZone(newRegion, id);
+                }
+            }
+        }
+    }
+
+    private IEnumerator UpdateReverbRoutine()
     {
         while (!WorldManager.Instance.Ready)
             yield return new WaitForSeconds(1f);
 
         UpdateCaveRegions(WorldManager.Instance.WorldData);
 
+        Vector2 playerPos = playerTransform.position;
+
         while (true)
         {
-            foreach (var zone in activeZones.Values)
+            playerPos = playerTransform.position;
+            foreach (var zone in zones.Values)
             {
-                if (zone.currentIntensity != zone.targetIntensity)
+                if (zone.zoneCollider.OverlapPoint(playerPos))
                 {
-                    zone.currentIntensity = Mathf.MoveTowards(
-                        zone.currentIntensity,
-                        zone.targetIntensity,
-                        reverbSettings.transitionSpeed * Time.deltaTime
-                    );
-                    zone.UpdateReverbIntensity(zone.currentIntensity);
+                    zone.reverbZone.enabled = true;
+                }
+                else
+                {
+                    zone.reverbZone.enabled = false;
                 }
             }
-            yield return new WaitForSeconds(reverbSettings.updateInterval);
+            yield return new WaitForSeconds(.1f);
         }
     }
 
     public void UpdateCaveRegions(TileSO[,] tileMap)
     {
         tileToRegionMap.Clear();
-        CleanupOldZones();
 
         int currentRegion = 0;
         int width = WorldManager.Instance.WorldWidth;
@@ -156,19 +193,29 @@ public class CaveReverbManager : MonoBehaviour
 
     private void CreateReverbZone(HashSet<Vector2Int> region, int regionId)
     {
+        regionTiles[regionId] = region;
+
         Vector2 center = CalculateRegionCenter(region);
         GameObject zoneObj = new GameObject($"CaveReverbZone_{regionId}");
         zoneObj.transform.position = center;
         zoneObj.transform.SetParent(transform);
 
         CustomReverbZone zone = zoneObj.AddComponent<CustomReverbZone>();
-        List<Vector2> boundaryPoints = CreateSimplifiedBoundary(region.Select(p => new Vector2(p.x, p.y)).ToList());
+        // Use a convex hull to create a boundary that better matches the cave’s shape.
+        List<Vector2> boundaryPoints = ComputeConvexHull(region.Select(p => new Vector2(p.x, p.y)).ToList());
         zone.Initialize(boundaryPoints);
 
-        float intensity = Mathf.InverseLerp(reverbSettings.minCaveSize, reverbSettings.maxCaveSize, region.Count);
-        zone.targetIntensity = intensity;
+        float maxRadius = 0f;
+        foreach (Vector2 point in boundaryPoints)
+        {
+            float distance = Vector2.Distance(center, point);
+            if (distance > maxRadius)
+                maxRadius = distance;
+        }
+        zone.reverbZone.minDistance = maxRadius * 0.8f;
+        zone.reverbZone.maxDistance = maxRadius;
 
-        activeZones[regionId] = zone;
+        zones[regionId] = zone;
     }
 
     private HashSet<Vector2Int> FloodFillRegion(Vector2Int start, int regionId, TileSO[,] tileMap)
@@ -198,30 +245,45 @@ public class CaveReverbManager : MonoBehaviour
         return region;
     }
 
-    private List<Vector2> CreateSimplifiedBoundary(List<Vector2> points)
+    private List<Vector2> ComputeConvexHull(List<Vector2> points)
     {
-        int numPoints = Mathf.Min(points.Count, 16);
-        List<Vector2> simplified = new List<Vector2>();
+        if (points.Count <= 1)
+            return new List<Vector2>(points);
 
-        for (int i = 0; i < numPoints; i++)
+        List<Vector2> sorted = points.OrderBy(p => p.x).ThenBy(p => p.y).ToList();
+        List<Vector2> lower = new List<Vector2>();
+        foreach (Vector2 p in sorted)
         {
-            float angle = (i * 2 * Mathf.PI) / numPoints;
-            Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-            Vector2 furthestPoint = points.OrderByDescending(p => Vector2.Dot(p - points[0], direction)).First();
-            simplified.Add(furthestPoint);
+            while (lower.Count >= 2 && Cross(lower[lower.Count - 2], lower[lower.Count - 1], p) <= 0)
+            {
+                lower.RemoveAt(lower.Count - 1);
+            }
+            lower.Add(p);
         }
 
-        return simplified;
+        List<Vector2> upper = new List<Vector2>();
+        for (int i = sorted.Count - 1; i >= 0; i--)
+        {
+            Vector2 p = sorted[i];
+            while (upper.Count >= 2 && Cross(upper[upper.Count - 2], upper[upper.Count - 1], p) <= 0)
+            {
+                upper.RemoveAt(upper.Count - 1);
+            }
+            upper.Add(p);
+        }
+
+        lower.RemoveAt(lower.Count - 1);
+        upper.RemoveAt(upper.Count - 1);
+
+        List<Vector2> hull = new List<Vector2>();
+        hull.AddRange(lower);
+        hull.AddRange(upper);
+        return hull;
     }
 
-    private void CleanupOldZones()
+    private float Cross(Vector2 o, Vector2 a, Vector2 b)
     {
-        foreach (var zone in activeZones.Values)
-        {
-            if (zone != null)
-                Destroy(zone.gameObject);
-        }
-        activeZones.Clear();
+        return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
     }
 
     private Vector2 CalculateRegionCenter(HashSet<Vector2Int> tiles)

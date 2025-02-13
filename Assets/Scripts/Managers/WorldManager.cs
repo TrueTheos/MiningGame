@@ -270,6 +270,8 @@ public class WorldManager : MonoBehaviour
             Buildings[x, y] = null;
             building.OnBreak();
         }
+
+        CaveReverbManager.Instance.RecalculateZone(x, y);
     }
 
     public void SpawnPickupable(float x, float y, ItemAmount itemAmount, bool randomOffset = true, bool randomRotation = true)
@@ -290,6 +292,7 @@ public class WorldManager : MonoBehaviour
         Buildings[x, y] = newBuilding;
         newBuilding.OnPlace(x,y);
         newBuilding.Pos = new Vector2Int(x, y);
+        CaveReverbManager.Instance.RecalculateZone(x, y);
     }
 
     public bool TryPlace(int x, int y, CustomBuilding building)
@@ -328,6 +331,7 @@ public class WorldManager : MonoBehaviour
                 BreakTile(x, y);
                 SetTile(x, y, tile.Tile);
                 AudioManager.Instance.PlayPlace();
+                CaveReverbManager.Instance.RecalculateZone(x, y);
                 return true;
             }
             else
@@ -339,6 +343,7 @@ public class WorldManager : MonoBehaviour
         {
             SetTile(x, y, tile.Tile);
             AudioManager.Instance.PlayPlace();
+            CaveReverbManager.Instance.RecalculateZone(x, y);
             return true;
         }
     }
