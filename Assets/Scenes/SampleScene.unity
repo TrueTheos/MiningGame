@@ -133,6 +133,7 @@ GameObject:
   - component: {fileID: 94410019}
   - component: {fileID: 94410021}
   - component: {fileID: 94410020}
+  - component: {fileID: 94410022}
   m_Layer: 0
   m_Name: AudioManager
   m_TagString: Untagged
@@ -264,12 +265,39 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _mineClips:
-  - {fileID: 8300000, guid: 0c5132d7d01bc0141b8651ed3c29a040, type: 3}
-  - {fileID: 8300000, guid: 04686fd972127e843b8f7d6b162a4a6f, type: 3}
-  - {fileID: 8300000, guid: 85549bb91142b394f9a1eb5ae20942de, type: 3}
-  - {fileID: 8300000, guid: bead39136116cb14e93e809e590d1d07, type: 3}
-  - {fileID: 8300000, guid: db54061345bdc854085b3937c54d4509, type: 3}
-  _pickupClip: {fileID: 8300000, guid: 8de9195e38a0539448df0746eb7365ca, type: 3}
+  - Clip: {fileID: 8300000, guid: 0c5132d7d01bc0141b8651ed3c29a040, type: 3}
+    Volume: 1
+  - Clip: {fileID: 8300000, guid: 04686fd972127e843b8f7d6b162a4a6f, type: 3}
+    Volume: 1
+  - Clip: {fileID: 8300000, guid: 85549bb91142b394f9a1eb5ae20942de, type: 3}
+    Volume: 1
+  - Clip: {fileID: 8300000, guid: bead39136116cb14e93e809e590d1d07, type: 3}
+    Volume: 1
+  - Clip: {fileID: 8300000, guid: db54061345bdc854085b3937c54d4509, type: 3}
+    Volume: 1
+  _pickupClip:
+    Clip: {fileID: 8300000, guid: 8de9195e38a0539448df0746eb7365ca, type: 3}
+    Volume: 0.5
+  _placeClip:
+    Clip: {fileID: 8300000, guid: 8ac301f01ce94ee479ee1bf61f805c7d, type: 3}
+    Volume: 0.3
+--- !u!114 &94410022
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 94410018}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc2f0cb2e1fab844cbf218496e8e4d52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reverbSettings:
+    minCaveSize: 10
+    maxCaveSize: 100
+    transitionSpeed: 2
+    updateInterval: 0.1
 --- !u!1 &302679738
 GameObject:
   m_ObjectHideFlags: 0
@@ -10866,7 +10894,7 @@ MonoBehaviour:
   _webSlowdownFactor: 0.5
   _jumpBufferTime: 0.2
   _coyoteTime: 0.1
-  _footstepDistanceThreshold: 1
+  _footstepDistanceThreshold: 10
   _attractionRadius: 2
   _maxPickupSpeed: 5
   _pickupableLayer:

@@ -41,6 +41,9 @@ public class WorldManager : MonoBehaviour
     private Camera _cam;
     private Vector2Int _lastPlayerPosition;
 
+    private GameObject _buildingsParent;
+    private GameObject _randomParent;
+
     private void Awake()
     {
         Instance = this;
@@ -52,6 +55,12 @@ public class WorldManager : MonoBehaviour
     {
         WorldData = new TileSO[WorldWidth, WorldHeight];
         Buildings = new CustomBuilding[WorldWidth, WorldHeight];
+
+        _buildingsParent = new GameObject("Buildings");
+        _buildingsParent.transform.SetParent(transform);
+
+        _randomParent = new GameObject("Random");
+        _randomParent.transform.SetParent(transform);
 
         StartCoroutine(InitWorld());        
     }
@@ -269,6 +278,7 @@ public class WorldManager : MonoBehaviour
         float rY = randomOffset ? Random.Range(-.2f, .2f) : 0;
         float rR = randomRotation ? Random.Range(0, 360) : 0;
         PickupableItem p = Instantiate(_pickupableItem, new Vector3(x + rX, y + rY, 0f), Quaternion.identity).GetComponent<PickupableItem>();
+        p.transform.SetParent(_randomParent.transform);
         p.transform.Rotate(0, 0, rR);
         p.Init(itemAmount);
     }
@@ -276,7 +286,7 @@ public class WorldManager : MonoBehaviour
     public void PlaceBuilding(int x, int y, CustomBuilding building)
     {
         CustomBuilding newBuilding = Instantiate(building.gameObject, new Vector3(x + .5f, y + .5f, 0), Quaternion.identity).GetComponent<CustomBuilding>();
-
+        newBuilding.transform.SetParent(_buildingsParent.transform);
         Buildings[x, y] = newBuilding;
         newBuilding.OnPlace(x,y);
         newBuilding.Pos = new Vector2Int(x, y);
@@ -292,6 +302,7 @@ public class WorldManager : MonoBehaviour
             {
                 BreakTile(x, y);
                 PlaceBuilding(x, y, building);
+                AudioManager.Instance.PlayPlace();
                 return true;
             }
             else
@@ -302,6 +313,32 @@ public class WorldManager : MonoBehaviour
         else
         {
             PlaceBuilding(x, y, building);
+            AudioManager.Instance.PlayPlace();
+            return true;
+        }
+    }
+
+    public bool TryPlaceTile(int x, int y, TileBuildableItem tile)
+    {
+        if (x < 0 || y < 0 || x >= WorldWidth || y >= WorldHeight) return false;
+        if (!IsEmpty(x, y))
+        {
+            if (Buildings[x, y] != null && Buildings[x, y].canBeDestroyedToReplace)
+            {
+                BreakTile(x, y);
+                SetTile(x, y, tile.Tile);
+                AudioManager.Instance.PlayPlace();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            SetTile(x, y, tile.Tile);
+            AudioManager.Instance.PlayPlace();
             return true;
         }
     }
@@ -333,4 +370,8 @@ public class WorldManager : MonoBehaviour
                viewportPoint.z > 0; // Ensure it's in front of the camera
     }
 
+    public bool IsTileInBounds(int x, int y)
+    {
+        return x >= 0 && x < WorldWidth && y >= 0 && y < WorldHeight;
+    }
 }

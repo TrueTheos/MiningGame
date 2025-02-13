@@ -1,11 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static AudioManager;
 
 [RequireComponent(typeof(AudioSource))]
 public class AudioPoint : MonoBehaviour
 {
-    public AudioClip Clip;
+    public SFX Clip;
 
     private void Awake()
     {
@@ -14,7 +15,7 @@ public class AudioPoint : MonoBehaviour
 
     public void Start()
     {
-        GetComponent<AudioSource>().PlayOneShot(Clip);
-        Destroy(gameObject, Clip.length);
+        GetComponent<AudioSource>().PlayOneShot(Clip.Clip, Clip.Volume);
+        Destroy(gameObject, Clip.Clip.length);
     }
 }

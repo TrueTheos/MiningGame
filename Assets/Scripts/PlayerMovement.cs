@@ -149,7 +149,7 @@ public class PlayerMovement : MonoBehaviour
         return res;
     }
 
-    void Update()
+    private void Update()
     {
         X = Mathf.FloorToInt(transform.position.x);
         Y = Mathf.FloorToInt(transform.position.y);

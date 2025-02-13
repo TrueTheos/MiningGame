@@ -28,9 +28,6 @@ public abstract class PlacableItem : Item
     [HideInInspector] public Vector2Int Pos;
 
     public virtual void OnPlace(int x, int y) { }
-
-    public abstract bool CanPlace(int x, int y);
-
     public Vector2Int MousePosToTilePos()
     {
         Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);

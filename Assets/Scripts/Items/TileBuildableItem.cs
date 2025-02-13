@@ -19,17 +19,13 @@ public class TileBuildableItem : PlacableItem
         Tile = tile;
         SpriteRend.sprite = Tile.Art;
     }
-     
-    public override bool CanPlace(int x, int y)
-    {
-        return WorldManager.Instance.GetTileAtMousePos() == null && WorldManager.Instance.GetBuildingAtMousePos() == null;
-    }
 
-    public override void OnPlace(int x, int y)
+    public override void Holding()
     {
-        if (!CanPlace(x, y)) return;
-
-        WorldManager.Instance.SetTile(x, y, Tile);
-        Inventory.Instance.RemoveOne();
+        var pos = MousePosToTilePos();
+        if(WorldManager.Instance.TryPlaceTile(pos.x, pos.y, this))
+        {
+            Inventory.Instance.RemoveOne();
+        }
     }
 }

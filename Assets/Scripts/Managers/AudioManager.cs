@@ -1,13 +1,22 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
+    [Serializable]
+    public struct SFX
+    {
+        public AudioClip Clip;
+        public float Volume;
+    }
+
     public static AudioManager Instance;
 
-    [SerializeField] private List<AudioClip> _mineClips;
-    [SerializeField] private AudioClip _pickupClip;
+    [SerializeField] private List<SFX> _mineClips;
+    [SerializeField] private SFX _pickupClip;
+    [SerializeField] private SFX _placeClip;
 
     private AudioSource _source;
 
@@ -17,23 +26,23 @@ public class AudioManager : MonoBehaviour
         _source = GetComponent<AudioSource>();
     }
 
-    public void PlayMine()
+    #region Utility
+    public void Play(SFX sfx)
     {
-        _source.PlayOneShot(_mineClips.Random());
+        _source.PlayOneShot(sfx.Clip, sfx.Volume);
     }
+    public void PlayAtPos(AudioPoint audio, Vector3 pos)
+    {
+        Instantiate(audio.gameObject, pos, Quaternion.identity);
+    }
+    #endregion
 
-    public void PlayPickup()
-    {
-        _source.PlayOneShot(_pickupClip);
-    }
+    public void PlayMine() => Play(_mineClips.Random());
+    public void PlayPickup() => Play(_pickupClip);
+    public void PlayPlace() => Play(_placeClip);
 
     public void Play(AudioClip clip)
     {
         _source.PlayOneShot(clip);
-    }
-
-    public void PlayAtPos(AudioPoint audio, Vector3 pos)
-    {
-        Instantiate(audio.gameObject, pos, Quaternion.identity);
     }
 }
