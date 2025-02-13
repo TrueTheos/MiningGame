@@ -15,4 +15,5 @@ public class TileSO : ScriptableObject
     public ItemAmount Drop;
     public bool DropItself = true;
     public float LightTransparency;
+    public List<AudioClip> FootstepSounds = new();
 }

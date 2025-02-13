@@ -38,6 +38,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float _webSlowdownFactor;
     [SerializeField] private float _jumpBufferTime = 0.2f;
     [SerializeField] private float _coyoteTime = 0.1f;
+    [SerializeField] private float _footstepDistanceThreshold = 1.0f;
 
     [Header("Attraction Settings")]
     [Tooltip("The radius within which pickups are attracted to the player.")]
@@ -82,6 +83,7 @@ public class PlayerMovement : MonoBehaviour
     private float _coyoteTimeCounter;
     private float _jumpBufferCounter;
     private float _originalGravityScale;
+    private Vector3 _lastFootstepPosition;
 
     private void Awake()
     {
@@ -201,6 +203,26 @@ public class PlayerMovement : MonoBehaviour
         }
 
         Flip();
+        UpdateFootsteps();
+    }
+
+    private void UpdateFootsteps()
+    {
+        float distanceTraveled = Vector3.Distance(transform.position, _lastFootstepPosition);
+
+        if (distanceTraveled >= _footstepDistanceThreshold)
+        {
+            TileSO tileData = WorldManager.Instance.WorldData[X, Y - 1];
+
+            if (tileData != null)
+            {
+                if (tileData.FootstepSounds != null && tileData.FootstepSounds.Count > 0)
+                {
+                    AudioManager.Instance.Play(tileData.FootstepSounds.Random());
+                }
+                _lastFootstepPosition = transform.position;
+            }
+        }
     }
 
     private void FixedUpdate()

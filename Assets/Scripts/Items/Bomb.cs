@@ -10,7 +10,7 @@ public class Bomb : Item
     public bool ExplodeOnCollision;
     public float ExplodeTime;
     public bool Sticky;
-    public AudioClip Clip;
+    public AudioPoint Audio;
 
     private void Awake()
     {
@@ -73,9 +73,9 @@ public class Bomb : Item
         }
 
         AudioManager.Instance.PlayMine();
-        AudioManager.Instance.Play(Clip);
+        AudioManager.Instance.PlayAtPos(Audio, transform.position);
 
-        DestroyImmediate(gameObject);
+        Destroy(gameObject);
     }
 
     private IEnumerator ExplodeAfterDelay()

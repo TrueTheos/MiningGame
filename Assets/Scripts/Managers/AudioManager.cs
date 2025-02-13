@@ -31,4 +31,9 @@ public class AudioManager : MonoBehaviour
     {
         _source.PlayOneShot(clip);
     }
+
+    public void PlayAtPos(AudioPoint audio, Vector3 pos)
+    {
+        Instantiate(audio.gameObject, pos, Quaternion.identity);
+    }
 }

@@ -10144,7 +10144,6 @@ GameObject:
   m_Component:
   - component: {fileID: 519420032}
   - component: {fileID: 519420031}
-  - component: {fileID: 519420029}
   - component: {fileID: 519420030}
   - component: {fileID: 519420033}
   - component: {fileID: 519420034}
@@ -10155,14 +10154,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &519420029
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 519420028}
-  m_Enabled: 1
 --- !u!114 &519420030
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10777,6 +10768,7 @@ GameObject:
   - component: {fileID: 1174165916}
   - component: {fileID: 1174165913}
   - component: {fileID: 1174165912}
+  - component: {fileID: 1174165917}
   m_Layer: 7
   m_Name: Player
   m_TagString: Player
@@ -10874,6 +10866,7 @@ MonoBehaviour:
   _webSlowdownFactor: 0.5
   _jumpBufferTime: 0.2
   _coyoteTime: 0.1
+  _footstepDistanceThreshold: 1
   _attractionRadius: 2
   _maxPickupSpeed: 5
   _pickupableLayer:
@@ -10942,6 +10935,14 @@ MonoBehaviour:
   - {fileID: 430226900}
   - {fileID: 1028031587}
   - {fileID: 1464480237}
+--- !u!81 &1174165917
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1174165911}
+  m_Enabled: 1
 --- !u!1 &1217471448
 GameObject:
   m_ObjectHideFlags: 0
