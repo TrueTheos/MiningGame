@@ -11,13 +11,19 @@ using UnityEngine.Tilemaps;
 public class BiomeSettings
 {
     public TileSO baseTile;
-    public TileSO[] decorativeTiles;
-    public float[] decorativeChances;
+    public List<DecorativeBuildingChance> decorativeBuildings = new();
     public int nodeCount = 5;
     public int initialSpreadRadius = 50;
     public int spreadIterations = 4;
     public float spreadChance = 0.55f; // Chance to spread to neighboring tiles
     public float diagonalSpreadModifier = 0.7f; // Makes diagonal spread less likely
+}
+
+[Serializable]
+public struct DecorativeBuildingChance
+{
+    public CustomBuilding Building;
+    public float Chance;
 }
 
 [System.Serializable]

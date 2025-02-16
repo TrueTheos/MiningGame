@@ -14,6 +14,7 @@ public class Inventory : MonoBehaviour
 
     [Header("Inventory Settings")]
     [SerializeField] private int slotCount;
+    [SerializeField] private int firstRowCount;
     [SerializeField] private GameObject _slotPrefab;
     [SerializeField] private Transform _slotsParent;
     [SerializeField] private List<InventorySlotUI> _equipmentSlots = new();
@@ -53,11 +54,12 @@ public class Inventory : MonoBehaviour
         }
 
         ChangeItem(_currentSlotIndex);
+        ToggleInventory(false);
     }
 
     private void Update()
     {
-        for (int i = 1; i <= 8; i++)
+        for (int i = 1; i <= firstRowCount; i++)
         {
             if (Input.GetKeyDown(i.ToString()))
             {
@@ -65,6 +67,10 @@ public class Inventory : MonoBehaviour
                 ChangeItem(_currentSlotIndex);
             }
         }
+
+        if(Input.GetKeyDown(KeyCode.Tab)) ToggleInventory(true);
+
+        if(Input.GetKeyUp(KeyCode.Tab)) ToggleInventory(false);
 
         foreach (var slot in _equipmentSlots)
         {
@@ -75,6 +81,19 @@ public class Inventory : MonoBehaviour
         }
 
         HandleItemUse();
+    }
+
+    private void ToggleInventory(bool value)
+    {
+        for (int i = firstRowCount - 1; i < _slotsUI.Count; i++)
+        {
+            _slotsUI[i].transform.parent.gameObject.SetActive(value);
+        }
+
+        foreach(var slot in _equipmentSlots)
+        {
+            slot.transform.parent.gameObject.SetActive(value);
+        }
     }
 
     public void RemoveOne()

@@ -25,7 +25,7 @@ public class WorldManager : MonoBehaviour
     [SerializeField] private PickupableItem _pickupableItem;
     [SerializeField] private TileBuildableItem _tileBuildableItem;
     [SerializeField] private int _playerShowTileRadius;
-    [SerializeField] private Torch _torchPrefab;
+    [SerializeField] private LightSourceCustomBuilding _torchPrefab;
 
     public readonly int CHUNK_SIZE = 64;
 

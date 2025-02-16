@@ -1,32 +1,18 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using static CustomReverbZone;
 
 public class CustomReverbZone : MonoBehaviour
 {
     public AudioReverbZone reverbZone;
     public PolygonCollider2D zoneCollider;
 
-    private static readonly ReverbParameters baseParameters = new ReverbParameters
-    {
-        room = -1000,
-        roomHF = 0,
-        roomLF = 0,
-        decayTime = 2.91f,
-        decayHFRatio = 1.3f,
-        reflections = -602,
-        reflectionsDelay = 0.015f,
-        reverb = -302,
-        reverbDelay = 0.022f,
-        diffusion = 100.0f,
-        density = 100.0f,
-        HFReference = 5000.0f,
-        LFReference = 250.0f
-    };
-
-    private struct ReverbParameters
+    [Serializable]
+    public struct ReverbParameters
     {
         public int room;
         public int roomHF;
@@ -43,7 +29,7 @@ public class CustomReverbZone : MonoBehaviour
         public float LFReference;
     }
 
-    public void Initialize(List<Vector2> points)
+    public void Initialize(List<Vector2> points, ReverbParameters baseParameters)
     {
         zoneCollider = gameObject.AddComponent<PolygonCollider2D>();
         zoneCollider.isTrigger = true;
@@ -78,6 +64,23 @@ public class CaveReverbManager : MonoBehaviour
         public float minCaveSize = 50;
         public float maxCaveSize = 500;
     }
+
+    public ReverbParameters baseParameters = new ReverbParameters
+    {
+        room = -1000,
+        roomHF = 0,
+        roomLF = 0,
+        decayTime = 2.91f,
+        decayHFRatio = 1.3f,
+        reflections = -602,
+        reflectionsDelay = 0.015f,
+        reverb = -302,
+        reverbDelay = 0.022f,
+        diffusion = 100.0f,
+        density = 100.0f,
+        HFReference = 5000.0f,
+        LFReference = 250.0f
+    };
 
     public ReverbSettings reverbSettings;
     private Dictionary<Vector2Int, int> tileToRegionMap = new Dictionary<Vector2Int, int>();
@@ -203,7 +206,7 @@ public class CaveReverbManager : MonoBehaviour
         CustomReverbZone zone = zoneObj.AddComponent<CustomReverbZone>();
         // Use a convex hull to create a boundary that better matches the cave’s shape.
         List<Vector2> boundaryPoints = ComputeConvexHull(region.Select(p => new Vector2(p.x, p.y)).ToList());
-        zone.Initialize(boundaryPoints);
+        zone.Initialize(boundaryPoints, baseParameters);
 
         float maxRadius = 0f;
         foreach (Vector2 point in boundaryPoints)

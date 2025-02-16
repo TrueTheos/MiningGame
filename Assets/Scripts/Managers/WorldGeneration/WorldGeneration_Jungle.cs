@@ -183,6 +183,23 @@ namespace Assets.Scripts.Managers.WorldGeneration
             // Replace base tile
             _worldManager.SetTile(x, y, jungleSettings.baseTile, false);
 
+            //todo REWORK THIS THATS STUPID, NEED MORE OPTIMAL WAYS TO CHECK FOR PLACEABLE STUFF,
+            //CONVERTTOJUNGLE IS ONLY CALLED ON JUNGLE WALLS, NOT EMPTY TILES INSIDE IT
+            if(_worldManager.IsEmpty(x,y + 1))
+            {
+                if (jungleSettings.decorativeBuildings != null && jungleSettings.decorativeBuildings.Count > 0)
+                {
+                    var randomDecoration = jungleSettings.decorativeBuildings.Random();
+                    if(randomDecoration.Building != null)
+                    {
+                        if (Random.Range(0f, 1f) < randomDecoration.Chance)
+                        {
+                            _worldManager.TryPlace(x, y + 1, randomDecoration.Building);
+                        }
+                    }
+                }
+            }
+
             if (Random.value < jungleSettings.grassSpawnChance)
             {
                 _worldManager.TryPlace(x, y + 1, jungleSettings.jungleGrassTile);
@@ -192,16 +209,6 @@ namespace Assets.Scripts.Managers.WorldGeneration
             if (_worldManager.IsEmpty(x, y - 1) && Random.value < jungleSettings.vineChance)
             {
                 GenerateVine(x, y - 1);
-            }
-
-            // Add random decorative tiles
-            for (int i = 0; i < jungleSettings.decorativeTiles.Length; i++)
-            {
-                if (Random.value < jungleSettings.decorativeChances[i])
-                {
-                    _worldManager.SetTile(x, y, jungleSettings.decorativeTiles[i], false);
-                    break;
-                }
             }
         }
 

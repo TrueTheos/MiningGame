@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8807414910438175275}
-  - component: {fileID: 6123229390937334193}
+  - component: {fileID: 3061521836199903507}
   m_Layer: 0
   m_Name: Torch
   m_TagString: Untagged
@@ -33,7 +33,7 @@ Transform:
   - {fileID: 6311567338641261287}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6123229390937334193
+--- !u!114 &3061521836199903507
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -42,7 +42,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 8130223441287344471}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9a355369a6ab93c48a7fde1db3cbfecb, type: 3}
+  m_Script: {fileID: 11500000, guid: ab452a69e35bed146806c10712bdbbff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   Name: Torch
@@ -53,12 +53,14 @@ MonoBehaviour:
   drop:
     Item: {fileID: 0}
     Amount: 0
+  canBeDestroyedToReplace: 0
+  ParticleColors: []
   Pos: {x: 0, y: 0}
   Solid: 0
   Durability: 1
-  source:
+  Light:
     LightPower: 1.5
-    Color: {r: 1, g: 0.91478, b: 0.5518868, a: 1}
+    Color: {r: 1, g: 0.9137255, b: 0.5529412, a: 1}
 --- !u!1 &9103307065011269696
 GameObject:
   m_ObjectHideFlags: 0

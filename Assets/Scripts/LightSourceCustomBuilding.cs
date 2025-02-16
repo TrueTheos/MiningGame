@@ -2,13 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Torch : CustomBuilding
+public class LightSourceCustomBuilding : CustomBuilding
 {
-    public LightSource source;
+    public LightSource Light;
 
     public override void OnPlace(int x, int y)
     {
-        LightManager.Instance.AddLight(x, y, source);
+        LightManager.Instance.AddLight(x, y, Light);
     }
 
     public override void OnBreak()

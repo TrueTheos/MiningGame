@@ -4,8 +4,10 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using static TooltipData;
+using static UnityEditor.Progress;
 
-public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, ITooltip
 {
     [Header("UI & Slot Info")]
     [SerializeField] private Image _icon;
@@ -158,5 +160,22 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             _inventory.MoveItem(draggedSlotUI, this);
         }
+    }
+
+    public TooltipData GetTooltipData()
+    {
+        if (ItemAmount == null || ItemAmount.Item == null) return null;
+
+        List<TooltipLine> lines = new()
+        {
+            new TooltipLine
+            {
+                text = ItemAmount.Item.Name,
+                fontSize = 22,
+                textColor = Color.white
+            },
+        };
+
+        return TooltipData.Create(lines.ToArray());
     }
 }

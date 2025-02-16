@@ -10,7 +10,7 @@ public static class Extensions
     {
         if (list == null || list.Count == 0)
         {
-            throw new InvalidOperationException("Cannot retrieve a random element from an empty or null list.");
+            return default(T);
         }
 
         int index = _random.Next(list.Count);
