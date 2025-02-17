@@ -178,4 +178,13 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
         return TooltipData.Create(lines.ToArray());
     }
+
+    public void ToggleVisibility(bool vis)
+    {
+        _icon.gameObject.SetActive(vis);
+        _quantityText.gameObject.SetActive(vis);
+
+        transform.parent.GetComponent<Image>().enabled = vis;
+        GetComponent<Image>().enabled = vis;
+    }
 }

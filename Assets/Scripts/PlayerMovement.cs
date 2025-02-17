@@ -52,6 +52,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Transform _groundCheck;
     [SerializeField] private Animator _animator;
     [SerializeField] private LayerMask _groundLayer;
+    [SerializeField] private SpriteRenderer _art;
+    [SerializeField] private Transform _hand;
     private Rigidbody2D _rb;
 
     #region States

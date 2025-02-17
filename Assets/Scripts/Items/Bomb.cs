@@ -3,51 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public class Bomb : Item
+public class Bomb : ThrowableItem
 {
     public int Radius;
-    public float ThrowPower;
     public bool ExplodeOnCollision;
     public float ExplodeTime;
     public bool Sticky;
     public AudioPoint Audio;
 
-    private void Awake()
+    public override void OnThrow()
     {
-        Rigidbody2D rb = GetComponent<Rigidbody2D>();
-        rb.bodyType = RigidbodyType2D.Kinematic;
-        var collider = GetComponent<Collider2D>();
-        collider.enabled = false;
-    }
-
-    public override void UseOnce()
-    {
-        if (transform.parent == null) return;
-
-        var newBomb = Instantiate(gameObject, transform.position, Quaternion.identity);
-        newBomb.transform.SetParent(null);
-        Rigidbody2D rb = newBomb.GetComponent<Rigidbody2D>();
-        rb.bodyType = RigidbodyType2D.Dynamic;
-        var collider = newBomb.GetComponent<Collider2D>();
-        collider.enabled = true;
-
-        Inventory.Instance.RemoveOne();
-
-        if (rb != null)
-        {
-            newBomb.transform.position = PlayerMovement.Instance.transform.position;
-            Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            Vector2 throwDirection = (mousePos - (Vector2)transform.position).normalized;
-
-            rb.AddForce(throwDirection * ThrowPower, ForceMode2D.Impulse);
-
-            if (ExplodeTime > 0) newBomb.GetComponent<Bomb>().StartExploding();
-        }
-    }
-
-    public void StartExploding()
-    {
-        StartCoroutine(ExplodeAfterDelay());
+        if (ExplodeTime > 0) StartCoroutine(ExplodeAfterDelay());
     }
 
     private void Explode()
@@ -84,9 +50,9 @@ public class Bomb : Item
         Explode();
     }
 
-    public void OnCollisionEnter2D(Collision2D collision)
+    public override void CollisionEnter(Collision2D collision)
     {
-        if(ExplodeOnCollision)
+        if (ExplodeOnCollision)
         {
             Explode();
         }

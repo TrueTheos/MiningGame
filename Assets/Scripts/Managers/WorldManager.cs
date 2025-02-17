@@ -1,5 +1,6 @@
 using Assets.Scripts.Managers.WorldGeneration;
 using DG.Tweening;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,6 +9,7 @@ using UnityEngine.U2D;
 using UnityEngine.UIElements;
 using UnityEngine.WSA;
 using static UnityEditor.PlayerSettings;
+using Random = UnityEngine.Random;
 
 public enum TilemapType { Main, Decorations}
 
@@ -105,6 +107,7 @@ public class WorldManager : MonoBehaviour
 
     private IEnumerator InitWorld()
     {
+        var time = Time.time;
         _player.gameObject.SetActive(false);
 
         MainTilemap.GetComponent<TilemapCollider2D>().enabled = false;
@@ -130,6 +133,8 @@ public class WorldManager : MonoBehaviour
         TryPlace(WorldWidth / 2, WorldHeight / 2 - 1, _torchPrefab);
 
         Ready = true;
+
+        Debug.Log($"WORLD GENERATED: {Time.time - time}");
     }
 
     [System.Obsolete]

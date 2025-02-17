@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -38,6 +40,110 @@ public class JungleBiomeSettings : BiomeSettings
 
 namespace Assets.Scripts.Managers.WorldGeneration
 {
+    [BurstCompile]
+    public struct TerrainGenerationJob : IJobParallelFor
+    {
+        [WriteOnly] public NativeArray<byte> TerrainData;
+        public int Width;
+        public int Height;
+        public float TerrainSmoothness;
+        public float TerrainHeightMultiplier;
+        public float PerlinCaveScale;
+        public float PerlinCaveThreshold;
+        public float InitialCaveChance;
+        public uint Seed;
+
+        public void Execute(int index)
+        {
+            int x = index % Width;
+            int y = index / Width;
+
+            var random = new Unity.Mathematics.Random(Seed + (uint)index);
+
+            float groundHeight = noise.cnoise(new float2(x * TerrainSmoothness, 0))
+                * TerrainHeightMultiplier + (Height / 2);
+
+            float caveNoise = noise.cnoise(new float2(x * PerlinCaveScale, y * PerlinCaveScale));
+            bool shouldBeCave = caveNoise > PerlinCaveThreshold || random.NextFloat() < InitialCaveChance;
+
+            TerrainData[index] = (byte)(shouldBeCave ? 0 : 1);
+        }
+    }
+
+    [BurstCompile]
+    public struct CellularAutomataJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeArray<byte> CurrentMap;
+        [WriteOnly] public NativeArray<byte> NewMap;
+        public int Width;
+        public int Height;
+        public int DeathLimit;
+        [ReadOnly] public NativeArray<int> BirthLimits;
+        public uint Seed;
+
+        public void Execute(int index)
+        {
+            int x = index % Width;
+            int y = index / Width;
+            var random = new Unity.Mathematics.Random(Seed + (uint)index);
+
+            int neighborCount = CountNeighbors(x, y);
+            bool currentCell = CurrentMap[index] == 1;
+
+            if (currentCell)
+            {
+                NewMap[index] = (byte)(neighborCount >= DeathLimit ? 1 : 0);
+            }
+            else
+            {
+                int randomBirthLimit = BirthLimits[random.NextInt(0, BirthLimits.Length)];
+                NewMap[index] = (byte)(neighborCount >= randomBirthLimit ? 1 : 0);
+            }
+        }
+
+        private int CountNeighbors(int x, int y)
+        {
+            int count = 0;
+            for (int i = -1; i <= 1; i++)
+            {
+                for (int j = -1; j <= 1; j++)
+                {
+                    if (i == 0 && j == 0) continue;
+
+                    int nx = x + i;
+                    int ny = y + j;
+
+                    if (nx < 0 || nx >= Width || ny < 0 || ny >= Height)
+                    {
+                        count++;
+                        continue;
+                    }
+
+                    count += CurrentMap[nx + ny * Width];
+                }
+            }
+            return count;
+        }
+    }
+
+    [BurstCompile]
+    public struct OreGenerationJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeArray<byte> TerrainData;
+        [WriteOnly] public NativeArray<bool> ShouldBeOre;
+        public float OreChance;
+        public uint Seed;
+
+        public void Execute(int index)
+        {
+            var random = new Unity.Mathematics.Random(Seed + (uint)index);
+            if (TerrainData[index] == 1 && random.NextFloat() < OreChance)
+            {
+                ShouldBeOre[index] = true;
+            }
+        }
+    }
+
     public partial class WorldGenerator : MonoBehaviour
     {
         [Header("Terrain Settings")]
@@ -70,6 +176,10 @@ namespace Assets.Scripts.Managers.WorldGeneration
         [SerializeField] private int _webNodesCount;
         [SerializeField] private int _webNodeSize;
 
+        [Header("UI Info")]
+        [SerializeField] private GameObject _generationUIParent;
+        [SerializeField] private TextMeshProUGUI _currentInfo;
+
         private WorldManager _worldManager;
 
         private int _worldWidth => _worldManager.WorldWidth;
@@ -83,7 +193,7 @@ namespace Assets.Scripts.Managers.WorldGeneration
 
         private List<Vector2Int> _freeTiles = new();
 
-        private static readonly Vector2Int[] directions =
+        private Vector2Int[] sixDirections =
         {
             new Vector2Int(-1, -1), new Vector2Int(0, -1), new Vector2Int(1, -1),
             new Vector2Int(-1,  0),                    new Vector2Int(1,  0),
@@ -99,6 +209,8 @@ namespace Assets.Scripts.Managers.WorldGeneration
 
         private IEnumerator GenerateWorldCoroutine()
         {
+            _generationUIParent.gameObject.SetActive(true);
+
             _ready = false;
             int numChunksX = Mathf.CeilToInt((float)_worldManager.WorldWidth / CHUNK_SIZE);
             int numChunksY = Mathf.CeilToInt((float)_worldManager.WorldHeight / CHUNK_SIZE);
@@ -107,14 +219,13 @@ namespace Assets.Scripts.Managers.WorldGeneration
             int chunksToGen = numChunksX * numChunksY;
             int generatedChunks = 0;
 
+            _currentInfo.text = "Generating chunks...";
             for (int chunkX = 0; chunkX < numChunksX; chunkX++)
             {
                 for (int chunkY = 0; chunkY < numChunksY; chunkY++)
                 {
                     GenerateChunk(chunkX, chunkY);
                     generatedChunks++;
-
-                    Debug.Log($"GENERATED CHUNK {generatedChunks} OUT OF {chunksToGen}");
 
                     if ((chunkX * numChunksY + chunkY) % 4 == 0)
                         yield return null;
@@ -123,18 +234,25 @@ namespace Assets.Scripts.Managers.WorldGeneration
 
             for (int step = 0; step < _caveSimulationSteps; step++)
             {
+                _currentInfo.text = "Generating caves...";
                 yield return StartCoroutine(ProcessCellularAutomataCoroutine());
             }
 
+            _currentInfo.text = "Generating ores...";
             yield return StartCoroutine(GenerateOresJobified());
 
+            _currentInfo.text = "Spawning vases...";
             yield return StartCoroutine(GenerateVasesCoroutine());
 
+            _currentInfo.text = "Spreading jungle...";
             GenerateJungleBiome();
 
+            _currentInfo.text = "Spawning webs...";
             GenerateWebBiome();
 
             _ready = true;
+
+            Destroy(_generationUIParent);
         }
 
         private void GenerateWebBiome()
@@ -318,7 +436,24 @@ namespace Assets.Scripts.Managers.WorldGeneration
             {
                 for (int y = startY; y < endY; y++)
                 {
-                    int neighborCount = CountSolidNeighbors(_worldManager.WorldData, x, y);
+                    int neighborCount = 0;
+
+                    for (int nx = x - 1; nx <= x + 1; nx++)
+                    {
+                        for (int ny = y - 1; ny <= y + 1; ny++)
+                        {
+                            if (nx == x && ny == y) continue; // Skip the current cell
+
+                            if (nx >= 0 && nx < _worldWidth && ny >= 0 && ny < _worldHeight)
+                            {
+                                if (_worldManager.WorldData[nx, ny] != null) neighborCount++;
+                            }
+                            else
+                            {
+                                neighborCount++; // Treat out-of-bounds as solid
+                            }
+                        }
+                    }
 
                     if (_worldManager.WorldData[x, y] != null)
                     {
@@ -362,7 +497,7 @@ namespace Assets.Scripts.Managers.WorldGeneration
         {
             List<Vector2Int> res = new List<Vector2Int>();
 
-            foreach (var dir in directions)
+            foreach (var dir in sixDirections)
             {
                 int nx = x + dir.x, ny = y + dir.y;
                 if (nx >= 0 && nx < _worldWidth && ny >= 0 && ny < _worldHeight)
@@ -372,28 +507,6 @@ namespace Assets.Scripts.Managers.WorldGeneration
             }
 
             return res;
-        }
-
-        int CountSolidNeighbors(TileSO[,] map, int x, int y)
-        {
-            int count = 0;
-            for (int nx = x - 1; nx <= x + 1; nx++)
-            {
-                for (int ny = y - 1; ny <= y + 1; ny++)
-                {
-                    if (nx == x && ny == y) continue; // Skip the current cell
-
-                    if (nx >= 0 && nx < _worldWidth && ny >= 0 && ny < _worldHeight)
-                    {
-                        if (map[nx, ny] != null) count++;
-                    }
-                    else
-                    {
-                        count++; // Treat out-of-bounds as solid
-                    }
-                }
-            }
-            return count;
         }
     }
 }

@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using UnityEngine;
  
 [Serializable]
-public struct LightSource
+public class LightSource
 {
+    public Guid ID = Guid.NewGuid();
     public float LightPower;
     public Color Color;
 }
@@ -27,7 +28,7 @@ public class LightManager : MonoBehaviour
     private float[,] _lightMap;
     private Color[,] _lightColors;
     private float[,] _colorInfluence;
-    private Dictionary<Vector2Int, LightSource> _persistentLights = new();
+    private Dictionary<Vector2Int, List<LightSource>> _persistentLights = new();
     private Texture2D _lightTexture;
     private SpriteRenderer _lightRenderer;
     private Camera _mainCamera;
@@ -145,20 +146,26 @@ public class LightManager : MonoBehaviour
         Vector2Int position = new Vector2Int(x, y);
         if (_persistentLights.ContainsKey(position))
         {
-            _persistentLights[position] = light;
+            _persistentLights[position].Add(light);
         }
         else
         {
-            _persistentLights.Add(position, light);
+            _persistentLights.Add(position, new List<LightSource> { light });
         }
     }
  
-    public void RemoveLight(int x, int y)
+    public void RemoveLight(int x, int y, Guid guid)
     {
         Vector2Int position = new Vector2Int(x, y);
         if (_persistentLights.ContainsKey(position))
         {
-            _persistentLights.Remove(position);
+            var lights = _persistentLights[position];
+            lights.RemoveAll(l => l.ID == guid);
+
+            if (lights.Count == 0)
+            {
+                _persistentLights.Remove(position);
+            }
         }
     }
  
@@ -169,8 +176,10 @@ public class LightManager : MonoBehaviour
  
         if (_persistentLights.ContainsKey(currentTile))
         {
-            var lightSource = _persistentLights[currentTile];
-            light = Mathf.Max(light, lightSource.LightPower);
+            foreach (var lightSource in _persistentLights[currentTile])
+            {
+                light = Mathf.Max(light, lightSource.LightPower);
+            }
         }
  
         int[][] directions = new int[][] {

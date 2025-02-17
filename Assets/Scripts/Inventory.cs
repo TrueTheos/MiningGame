@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditorInternal.Profiling.Memory.Experimental;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using static UnityEditor.Progress;
@@ -8,7 +9,7 @@ using static UnityEditor.Progress;
 public class Inventory : MonoBehaviour
 {
     public static Inventory Instance;
-    [SerializeField] private GameObject _hand;
+    [SerializeField] private GameObject _itemHolder;
     public Item CurrentItem { get; private set; }
     [SerializeField] private List<ItemAmount> _startItems = new();
 
@@ -20,6 +21,8 @@ public class Inventory : MonoBehaviour
     [SerializeField] private List<InventorySlotUI> _equipmentSlots = new();
     private List<InventorySlotUI> _slotsUI = new();
     private int _currentSlotIndex = 0;
+
+    private GameObject _player;
 
     private void Awake()
     {
@@ -41,6 +44,7 @@ public class Inventory : MonoBehaviour
 
     private void Start()
     {
+        _player = PlayerMovement.Instance.gameObject;
         InitializeInventory();
     }
 
@@ -87,12 +91,12 @@ public class Inventory : MonoBehaviour
     {
         for (int i = firstRowCount - 1; i < _slotsUI.Count; i++)
         {
-            _slotsUI[i].transform.parent.gameObject.SetActive(value);
+            _slotsUI[i].ToggleVisibility(value);
         }
 
         foreach(var slot in _equipmentSlots)
         {
-            slot.transform.parent.gameObject.SetActive(value);
+            slot.ToggleVisibility(value);
         }
     }
 
@@ -184,7 +188,7 @@ public class Inventory : MonoBehaviour
         if (toSlot.ItemAmount.IsEmpty())
         {
             // Move item to empty slot
-            var newItem = Instantiate(fromSlot.ItemAmount.Item.gameObject, toSlot.gameObject.transform);
+            var newItem = Instantiate(fromSlot.ItemAmount.Item.gameObject, _player.transform);
             newItem.SetActive(false);
             toSlot.SetItem(new ItemAmount(newItem.GetComponent<Item>(), fromSlot.ItemAmount.Amount));
             fromSlot.ClearSlot();
@@ -221,14 +225,14 @@ public class Inventory : MonoBehaviour
 
         if (CurrentItem != null)
         {
-            CurrentItem.gameObject.transform.SetParent(slot.transform);
+            CurrentItem.gameObject.transform.SetParent(_player.transform);
             CurrentItem.gameObject.SetActive(false);
         }
 
-        if (!slot.ItemAmount.IsEmpty() && _hand != null)
+        if (!slot.ItemAmount.IsEmpty() && _itemHolder != null)
         {
             CurrentItem = slot.ItemAmount.Item;
-            CurrentItem.gameObject.transform.SetParent(_hand.transform);
+            CurrentItem.gameObject.transform.SetParent(_itemHolder.transform);
             CurrentItem.gameObject.SetActive(true);
             CurrentItem.gameObject.transform.localPosition = Vector3.zero;
         }
@@ -267,7 +271,7 @@ public class Inventory : MonoBehaviour
             if (slot.ItemAmount.IsEmpty())
             {
                 int add = Mathf.Min(100, remaining);
-                var newItem = Instantiate(item.gameObject, slot.transform);
+                var newItem = Instantiate(item.gameObject, _player.transform);
                 newItem.SetActive(false);
                 slot.SetItem(new ItemAmount(newItem.GetComponent<Item>(), add));
                 remaining -= add;

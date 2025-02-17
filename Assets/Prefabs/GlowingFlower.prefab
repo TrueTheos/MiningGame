@@ -64,6 +64,7 @@ MonoBehaviour:
   Light:
     LightPower: 0.05
     Color: {r: 1, g: 0.82183224, b: 0.43867922, a: 1}
+  _light2D: {fileID: 7591708945492799102}
 --- !u!212 &5929953770191980229
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -164,7 +165,7 @@ MonoBehaviour:
   m_LightType: 3
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0.6
-  m_Color: {r: 1, g: 0.98236525, b: 0.3254717, a: 1}
+  m_Color: {r: 0.7033389, g: 1, b: 0.32549024, a: 1}
   m_Intensity: 15
   m_LightVolumeIntensity: 1
   m_LightVolumeIntensityEnabled: 0
