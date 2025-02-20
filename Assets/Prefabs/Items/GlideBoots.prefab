@@ -103,7 +103,7 @@ MonoBehaviour:
   _fallingGravityModifier:
     Type: 2
     Value: 0.1
-  _particleSystem: {fileID: 0}
+  _particleSystem: {fileID: 1148075413063982651}
 --- !u!1 &6799596153587188955
 GameObject:
   m_ObjectHideFlags: 0

@@ -3,6 +3,7 @@ using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.U2D;
@@ -32,6 +33,7 @@ public class WorldManager : MonoBehaviour
     public readonly int CHUNK_SIZE = 64;
 
     public TileSO[,] WorldData { get; private set; } // Stores world tiles (0 = air, 1 = dirt, 2 = stone, 3 = ore)
+    public bool[,] PathNodes {  get; private set; }
     public CustomBuilding[,] Buildings { get; private set; }
 
     private Dictionary<Vector2Int, int> _durabilityLeft = new();
@@ -56,6 +58,7 @@ public class WorldManager : MonoBehaviour
     private void Start()
     {
         WorldData = new TileSO[WorldWidth, WorldHeight];
+        PathNodes = new bool[WorldWidth, WorldHeight];
         Buildings = new CustomBuilding[WorldWidth, WorldHeight];
 
         _buildingsParent = new GameObject("Buildings");
@@ -71,8 +74,13 @@ public class WorldManager : MonoBehaviour
 
     public bool IsEmpty(int x, int y)
     {
-        if(x <0 || x >= WorldWidth || y <0 || y >= WorldHeight) return false;
+        if(!IsTileInBounds(x, y)) return false;
         return WorldData[x,y] == null && Buildings[x,y] == null;
+    }
+
+    public bool IsSolid(int x, int y)
+    {
+        return ((WorldData[x, y] != null && WorldData[x, y].Solid) || (Buildings[x, y] != null && Buildings[x, y].Solid));
     }
 
     public bool IsLightBlocker(int x, int y)
@@ -227,7 +235,7 @@ public class WorldManager : MonoBehaviour
 
         _durabilityLeft.Remove(new Vector2Int(x, y));
 
-        if (x < 0 || x >= WorldWidth || y < 0 || y >= WorldHeight) return;
+        if (!IsTileInBounds(x,y)) return;
         if (WorldData[x, y] != null)
         {  
             Vector3 worldPosition = MainTilemap.CellToWorld(tilePosition);
@@ -253,7 +261,7 @@ public class WorldManager : MonoBehaviour
             {
                 for (int ny = y - 1; ny < y + 1; ny++)
                 {
-                    if (nx < 0 || ny < 0 || nx >= WorldWidth || ny >= WorldHeight) continue;
+                    if (!IsTileInBounds(nx,ny)) continue;
                     var building = Buildings[nx, ny];
 
                     if (building != null) building.DestroyIfInvalid();
@@ -273,6 +281,8 @@ public class WorldManager : MonoBehaviour
             if(Buildings[x, y].drop.Item != null) SpawnPickupable(tilePosition.x + .5f, tilePosition.y + .5f, Buildings[x, y].drop);
             var building = Buildings[x, y];
             Buildings[x, y] = null;
+            UpdatePathNodeAt(x, y);
+            UpdatePathNodeAt(x, y + 1);
             building.OnBreak();
         }
 
@@ -298,11 +308,14 @@ public class WorldManager : MonoBehaviour
         newBuilding.OnPlace(x,y);
         newBuilding.Pos = new Vector2Int(x, y);
         CaveReverbManager.Instance.RecalculateZone(x, y);
+
+        UpdatePathNodeAt(x, y);
+        UpdatePathNodeAt(x, y + 1);
     }
 
     public bool TryPlace(int x, int y, CustomBuilding building)
     {
-        if(x < 0 || y < 0 || x >= WorldWidth || y >= WorldHeight) return false;
+        if (!IsTileInBounds(x, y)) return false;
         if (!building.IsPlacementValid(x, y)) return false;
         if (!IsEmpty(x, y))
         {
@@ -328,7 +341,7 @@ public class WorldManager : MonoBehaviour
 
     public bool TryPlaceTile(int x, int y, TileBuildableItem tile)
     {
-        if (x < 0 || y < 0 || x >= WorldWidth || y >= WorldHeight) return false;
+        if (!IsTileInBounds(x,y)) return false;
         if (!IsEmpty(x, y))
         {
             if (Buildings[x, y] != null && Buildings[x, y].canBeDestroyedToReplace)
@@ -361,6 +374,18 @@ public class WorldManager : MonoBehaviour
 
         //if (IsTileInView(x, y)) ShowTile(x, y);
         //MainTilemap.SetTile(x,)
+        UpdatePathNodeAt(x, y);
+        UpdatePathNodeAt(x, y + 1);
+    }
+
+    private void UpdatePathNodeAt(int x, int y)
+    {
+        if (!IsTileInBounds(x, y)) return;
+        bool isFree = (WorldData[x, y] == null || !WorldData[x,y].Solid) && (Buildings[x, y] == null || !Buildings[x, y].Solid);
+
+        bool hasSolidSupport = (y - 1 >= 0) && ((WorldData[x, y - 1] != null && WorldData[x, y - 1].Solid) || (Buildings[x, y - 1] != null && Buildings[x, y - 1].Solid));
+
+        PathNodes[x, y] = isFree && hasSolidSupport;
     }
 
     private void ShowTile(int x, int y)
