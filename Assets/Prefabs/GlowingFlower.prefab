@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1976852128228118163}
+  - component: {fileID: 7828723633766505788}
   - component: {fileID: 8338254676118141024}
   - component: {fileID: 5929953770191980229}
   m_Layer: 0
@@ -34,6 +35,23 @@ Transform:
   - {fileID: 4633306029748393899}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7828723633766505788
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7790794933287577179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2824d768bbea3643b9ef4e957569871, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _monster: {fileID: 5307079044318120335, guid: 268b797877f01944a9897b9e3f9b46b4, type: 3}
+  _spawnChance: 35
+  _numberOfMonsters: {x: 2, y: 5}
+  _spawnRadius: 5
+  _drawGizmos: 1
 --- !u!114 &8338254676118141024
 MonoBehaviour:
   m_ObjectHideFlags: 0

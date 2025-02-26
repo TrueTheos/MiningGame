@@ -27,6 +27,11 @@ public static class Extensions
         return new Vector3(vector.x + offset, vector.y + offset, z);
     }
 
+    public static bool RandTest(this int val)
+    {
+        return UnityEngine.Random.Range(0, val + 1) < val;
+    }
+
     public static IEnumerable<Vector2Int> GetNeighbors(this Vector2Int tile)
     {
         yield return tile + Vector2Int.up;

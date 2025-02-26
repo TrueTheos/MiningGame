@@ -180,6 +180,8 @@ namespace Assets.Scripts.Managers.WorldGeneration
         [SerializeField] private GameObject _generationUIParent;
         [SerializeField] private TextMeshProUGUI _currentInfo;
 
+        [SerializeField] private GameObject _borderPrefab;
+
         private WorldManager _worldManager;
 
         private int _worldWidth => _worldManager.WorldWidth;
@@ -250,9 +252,42 @@ namespace Assets.Scripts.Managers.WorldGeneration
             _currentInfo.text = "Spawning webs...";
             GenerateWebBiome();
 
+            CreateBorder();
             _ready = true;
 
             Destroy(_generationUIParent);
+        }
+
+        private void CreateBorder()
+        {
+            float width = _worldWidth;
+            float height = _worldHeight;
+
+            float borderThickness = 5;
+
+            Vector2 bottomPosition = new Vector2(width / 2, -borderThickness / 2);
+            GameObject bottomBorder = Instantiate(_borderPrefab, bottomPosition, Quaternion.identity, transform);
+            bottomBorder.name = "BottomBorder";
+            bottomBorder.transform.localScale = new Vector3(width + 2 * borderThickness, borderThickness, 1f);
+
+            // Instantiate the top border.
+            Vector2 topPosition = new Vector2(width / 2, height + borderThickness / 2);
+            GameObject topBorder = Instantiate(_borderPrefab, topPosition, Quaternion.identity, transform);
+            topBorder.name = "TopBorder";
+            topBorder.transform.localScale = new Vector3(width + 2 * borderThickness, borderThickness, 1f);
+
+            // Instantiate the left border.
+            // It should span the full height plus extra on top and bottom.
+            Vector2 leftPosition = new Vector2(-borderThickness / 2, height / 2);
+            GameObject leftBorder = Instantiate(_borderPrefab, leftPosition, Quaternion.identity, transform);
+            leftBorder.name = "LeftBorder";
+            leftBorder.transform.localScale = new Vector3(borderThickness, height + 2 * borderThickness, 1f);
+
+            // Instantiate the right border.
+            Vector2 rightPosition = new Vector2(width + borderThickness / 2, height / 2);
+            GameObject rightBorder = Instantiate(_borderPrefab, rightPosition, Quaternion.identity, transform);
+            rightBorder.name = "RightBorder";
+            rightBorder.transform.localScale = new Vector3(borderThickness, height + 2 * borderThickness, 1f);
         }
 
         private void GenerateWebBiome()

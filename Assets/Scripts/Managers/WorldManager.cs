@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.Tilemaps;
 using UnityEngine.U2D;
 using UnityEngine.UIElements;
@@ -29,6 +30,8 @@ public class WorldManager : MonoBehaviour
     [SerializeField] private TileBuildableItem _tileBuildableItem;
     [SerializeField] private int _playerShowTileRadius;
     [SerializeField] private LightSourceCustomBuilding _torchPrefab;
+
+    public UnityEvent OnWorldReady;
 
     public readonly int CHUNK_SIZE = 64;
 
@@ -125,6 +128,9 @@ public class WorldManager : MonoBehaviour
         {
             yield return new WaitForSeconds(1);
         }
+
+        OnWorldReady?.Invoke();
+        OnWorldReady?.RemoveAllListeners();
 
         for (int x = WorldWidth / 2 - 1; x <= WorldWidth / 2 + 1; x++)
         {
@@ -408,5 +414,33 @@ public class WorldManager : MonoBehaviour
     public bool IsTileInBounds(int x, int y)
     {
         return x >= 0 && x < WorldWidth && y >= 0 && y < WorldHeight;
+    }
+
+    public Vector2Int? GetRandomFreeCellInCircle(Vector2Int center, int radius)
+    {
+        List<Vector2Int> freeCells = new List<Vector2Int>();
+
+        for (int x = center.x - radius; x <= center.x + radius; x++)
+        {
+            for (int y = center.y - radius; y <= center.y + radius; y++)
+            {
+                float dist = Vector2Int.Distance(center, new Vector2Int(x, y));
+                if (dist <= radius)
+                {
+                    if (IsTileInBounds(x,y) && !IsSolid(x,y))
+                    {
+                        freeCells.Add(new Vector2Int(x, y));
+                    }
+                }
+            }
+        }
+
+        if (freeCells.Count == 0)
+        {
+            return null;
+        }
+
+        int randIndex = Random.Range(0, freeCells.Count);
+        return freeCells[randIndex];
     }
 }
