@@ -2,39 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-public class PathNode
-{
-    public enum ConnectionType { WALK, FALL, JUMP };
-    public class PathNodeConnection
-    {
-        public PathNode Target;
-
-        public ConnectionType ConnType;
-        public float JumpPower = -1f;
-
-        public PathNodeConnection(ConnectionType connType, PathNode target, float jumpPower)
-        {
-            ConnType = connType;
-            Target = target;
-            JumpPower = jumpPower;
-        }
-    }
-
-    public Vector2Int Pos;
-    public int X => Pos.x;
-    public int Y => Pos.y;
-    public Dictionary<Vector2Int, PathNodeConnection> Connections = new();
-    public PathNode(int x, int y)
-    {
-        Pos = new Vector2Int(x, y);
-    }
-
-    public void AddConnection(ConnectionType type, PathNode node, float jumpPower = -1f)
-    {
-        if (Connections.ContainsKey(node.Pos)) return;
-        Connections[node.Pos] = new PathNodeConnection(type, node, jumpPower);
-    }
-}
 
 public class AtikiMonster : Monster
 {
@@ -53,7 +20,14 @@ public class AtikiMonster : Monster
     [SerializeField] private LayerMask _groundLayer;
     [SerializeField] private float _targetDetectionRange;
     [SerializeField] private LayerMask _detectionLayer;
+
+    [Header("Wander Settings")]
     [SerializeField] private float _enrageOtherMonstersRadius;
+    [SerializeField] private int _wanderSearchNodeRadius;
+    [SerializeField] private Vector2 _wanderChangeTargetCooldown;
+    private float _lastWanderTargetChange = 0f;
+    private float _currentWanderCooldown;
+    private bool _enraged = false;
 
     public enum MovementState { Idle, FollowingPath, Jumping }
 
@@ -64,7 +38,7 @@ public class AtikiMonster : Monster
 
     private float _pathRecalcCooldown = 0.5f;
     private float _lastPathCalcTime = 0f;
-    private Vector2Int _lastTargetPos;
+    private Vector2Int _currentTargetPos;
 
     private List<PathNode> _currentPath;
     private PathNode _currentTargetNode;
@@ -83,8 +57,6 @@ public class AtikiMonster : Monster
     private int _Y => _Pos.y;
     private bool _isFacingRight = true;
 
-    private bool _enraged = false;
-
     Dictionary<Vector2Int, PathNode> nodes = new();
     Dictionary<Vector2Int, PathNode> edges = new();
 
@@ -97,37 +69,18 @@ public class AtikiMonster : Monster
 
     private void Start()
     {
+        _Pos.x = Mathf.FloorToInt(transform.position.x);
+        _Pos.y = Mathf.FloorToInt(transform.position.y);
         _worldManager = WorldManager.Instance;
         _player = PlayerMovement.Instance;
-        _lastTargetPos = _player.Pos;
+        _currentTargetPos = Vector2Int.zero;
+        _currentWanderCooldown = _wanderChangeTargetCooldown.Random();
         CalculateGraph();
     }
 
     public void Enrage()
     {
         _enraged = true;
-    }
-
-    public override void OnTakeDamage()
-    {
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, _enrageOtherMonstersRadius, gameObject.layer);
-        List<GameObject> monsters = new List<GameObject>();
-
-        foreach (Collider2D collider in colliders)
-        {
-            if (collider.gameObject != gameObject)
-            {
-                monsters.Add(collider.gameObject);
-            }
-        }
-
-        foreach (var monster in monsters)
-        {
-            if(monster.TryGetComponent<AtikiMonster>(out AtikiMonster atiki))
-            {
-                atiki.Enrage();
-            }
-        }
     }
 
     private void Update()
@@ -143,7 +96,7 @@ public class AtikiMonster : Monster
                 bool shouldRecalculate = false;
 
                 // Player moved significantly
-                if (Vector2Int.Distance(_player.Pos, _lastTargetPos) > 1)
+                if (Vector2Int.Distance(_player.Pos, _currentTargetPos) > 1)
                     shouldRecalculate = true;
 
                 // Regular recalculation interval
@@ -156,11 +109,30 @@ public class AtikiMonster : Monster
 
                 if (shouldRecalculate)
                 {
-                    _lastTargetPos = _player.Pos;
+                    _currentTargetPos = _player.Pos;
                     CalculateGraph();
-                    CalculatePath();
+                    FindPath();
 
                     _lastPathCalcTime = Time.time;
+                }
+            }
+        }
+        else
+        {
+            if(Time.time - _currentWanderCooldown > _lastWanderTargetChange)
+            {
+                _lastWanderTargetChange = Time.time;
+                _currentWanderCooldown = _wanderChangeTargetCooldown.Random();
+
+                var freeCells = _worldManager.GetFreeCellsInCircle(new Vector2Int(_X, _Y), _wanderSearchNodeRadius);
+
+                if(freeCells != null && freeCells.Count > 0)
+                {
+                    freeCells = freeCells.Where(x => nodes.ContainsKey(x)).ToList();
+
+                    _currentTargetPos = freeCells.Random();
+                    CalculateGraph();
+                    FindPath();
                 }
             }
         }
@@ -170,7 +142,7 @@ public class AtikiMonster : Monster
 
     public bool ReachedTarget()
     {
-        _reachedTarget = Vector2.Distance(transform.position, _lastTargetPos.ToVector3(offset:.5f)) < _pathNodeReachDistance;
+        _reachedTarget = Vector2.Distance(transform.position, _currentTargetPos.ToVector3(offset:.5f)) < _pathNodeReachDistance;
         return _reachedTarget;
     }
 
@@ -180,13 +152,14 @@ public class AtikiMonster : Monster
         {
             FollowPath();
         }
+
+        _animator.SetFloat("horizontal", Mathf.Abs(_rb.velocity.x));
     }
 
     private bool CheckTargetVisibility()
     {
         Vector2 directionToPlayer = (_player.transform.position - transform.position);
         float distanceToPlayer = directionToPlayer.magnitude;
-        float angle = Vector2.Angle(transform.right, directionToPlayer);
 
         if (distanceToPlayer >= _targetDetectionRange) return false;
 
@@ -225,16 +198,16 @@ public class AtikiMonster : Monster
                Physics2D.Raycast(bottomRight, Vector2.down, _groundedCheckDistance, _groundLayer);
     }
 
-    public bool CalculatePath()
+    public bool FindPath()
     {
         PathNode startNode = nodes.ContainsKey(_Pos) ? nodes[_Pos] : GetClosestNode(_Pos);
 
-        Vector2Int targetPosInt = _lastTargetPos;
+        Vector2Int targetPosInt = _currentTargetPos;
         PathNode goal = nodes.ContainsKey(targetPosInt) ? nodes[targetPosInt] : GetClosestNode(targetPosInt);
 
         if (startNode != null && goal != null)
         {
-            _currentPath = AStar(startNode, goal);
+            _currentPath = Pathfinder.AStar(startNode, goal, nodes);
             if (_currentPath != null && _currentPath.Count > 0)
             {
                 _currentPathIndex = 0;
@@ -412,86 +385,6 @@ public class AtikiMonster : Monster
         return false;
     }
 
-    private List<PathNode> AStar(PathNode start, PathNode goal)
-    {
-        var openSet = new List<PathNode> { start };
-        var cameFrom = new Dictionary<PathNode, PathNode>();
-
-        // Cost from start along best known path.
-        var gScore = new Dictionary<PathNode, float>();
-        // Estimated total cost from start to goal through y.
-        var fScore = new Dictionary<PathNode, float>();
-
-        // Initialize all nodes in our search area.
-        foreach (var node in nodes.Values)
-        {
-            gScore[node] = float.PositiveInfinity;
-            fScore[node] = float.PositiveInfinity;
-        }
-        gScore[start] = 0f;
-        fScore[start] = Heuristic(start, goal);
-
-        while (openSet.Count > 0)
-        {
-            // Get node in openSet with lowest fScore.
-            PathNode current = openSet.OrderBy(n => fScore[n]).First();
-
-            if (current == goal)
-            {
-                return ReconstructPath(cameFrom, current);
-            }
-
-            openSet.Remove(current);
-
-            foreach (var conn in current.Connections.Values)
-            {
-                PathNode neighbor = conn.Target;
-                float tentativeGScore = gScore[current] + GetConnectionCost(conn, current);
-
-                if (tentativeGScore < gScore[neighbor])
-                {
-                    cameFrom[neighbor] = current;
-                    gScore[neighbor] = tentativeGScore;
-                    fScore[neighbor] = tentativeGScore + Heuristic(neighbor, goal);
-
-                    if (!openSet.Contains(neighbor))
-                        openSet.Add(neighbor);
-                }
-            }
-        }
-        // No path found.
-        return null;
-    }
-
-    private float Heuristic(PathNode a, PathNode b)
-    {
-        return Mathf.Abs(a.X - b.X) + Mathf.Abs(a.Y - b.Y);
-    }
-
-    private float GetConnectionCost(PathNode.PathNodeConnection connection, PathNode startNode)
-    {
-        PathNode.ConnectionType type = connection.ConnType;
-        float distance = Vector2.Distance(startNode.Pos, connection.Target.Pos);
-        return type switch
-        {
-            PathNode.ConnectionType.WALK => 1f * distance,
-            PathNode.ConnectionType.FALL => 1f * distance,
-            PathNode.ConnectionType.JUMP => 5f * distance,
-            _ => 1f * distance,
-        };
-    }
-
-    private List<PathNode> ReconstructPath(Dictionary<PathNode, PathNode> cameFrom, PathNode current)
-    {
-        var totalPath = new List<PathNode> { current };
-        while (cameFrom.ContainsKey(current))
-        {
-            current = cameFrom[current];
-            totalPath.Insert(0, current);
-        }
-        return totalPath;
-    }
-
     private PathNode GetClosestNode(Vector2Int pos)
     {
         PathNode closest = null;
@@ -571,7 +464,7 @@ public class AtikiMonster : Monster
 
         if (connection == null)
         {
-            CalculatePath();
+            FindPath();
             return;
         }
 
@@ -598,7 +491,6 @@ public class AtikiMonster : Monster
         if (Mathf.Abs(targetPosition.x + 0.5f - transform.position.x) > 0.1f)
         {
             _rb.velocity = new Vector2(direction * _moveSpeed, _rb.velocity.y);
-            _animator.SetFloat("horizontal", Mathf.Abs(_rb.velocity.x));
         }
     }
 
@@ -674,8 +566,30 @@ public class AtikiMonster : Monster
         }
     }
 
-    private void OnDrawGizmos()
+    public override void OnTakeDamage()
     {
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, _enrageOtherMonstersRadius, gameObject.layer);
+        List<GameObject> monsters = new List<GameObject>();
+
+        foreach (Collider2D collider in colliders)
+        {
+            if (collider.gameObject != gameObject)
+            {
+                monsters.Add(collider.gameObject);
+            }
+        }
+
+        foreach (var monster in monsters)
+        {
+            if (monster.TryGetComponent<AtikiMonster>(out AtikiMonster atiki))
+            {
+                atiki.Enrage();
+            }
+        }
+    }
+
+    private void OnDrawGizmos()
+    {      
         if (_currentPath != null && _currentPath.Count > 0)
         {
             Gizmos.color = Color.white;

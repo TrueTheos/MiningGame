@@ -147,6 +147,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 2807
   _enrageOtherMonstersRadius: 10
+  _wanderSearchNodeRadius: 7
+  _wanderChangeTargetCooldown: {x: 5, y: 10}
   _state: 0
   _isPlayerVisible: 0
   _reachedTarget: 0

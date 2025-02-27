@@ -443,4 +443,26 @@ public class WorldManager : MonoBehaviour
         int randIndex = Random.Range(0, freeCells.Count);
         return freeCells[randIndex];
     }
+
+    public List<Vector2Int> GetFreeCellsInCircle(Vector2Int center, int radius)
+    {
+        List<Vector2Int> freeCells = new List<Vector2Int>();
+
+        for (int x = center.x - radius; x <= center.x + radius; x++)
+        {
+            for (int y = center.y - radius; y <= center.y + radius; y++)
+            {
+                float dist = Vector2Int.Distance(center, new Vector2Int(x, y));
+                if (dist <= radius)
+                {
+                    if (IsTileInBounds(x, y) && !IsSolid(x, y))
+                    {
+                        freeCells.Add(new Vector2Int(x, y));
+                    }
+                }
+            }
+        }
+
+        return freeCells;
+    }
 }

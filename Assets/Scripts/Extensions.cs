@@ -22,6 +22,11 @@ public static class Extensions
         return UnityEngine.Random.Range(vector.x, vector.y + 1);
     }
 
+    public static float Random(this Vector2 vector)
+    {
+        return UnityEngine.Random.Range(vector.x, vector.y);
+    }
+
     public static Vector3 ToVector3(this Vector2Int vector, float z = 0f, float offset = 0f)
     {
         return new Vector3(vector.x + offset, vector.y + offset, z);
