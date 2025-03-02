@@ -504,6 +504,50 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac0b09e7857660247b1477e93731de29, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &308056569
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 308056570}
+  - component: {fileID: 308056571}
+  m_Layer: 0
+  m_Name: ChunkManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &308056570
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 308056569}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1586676808}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &308056571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 308056569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b163706cfadabc4ab03a93821557a6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &430226898
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10349,7 +10393,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 7.5
+  orthographic size: 11.25
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -10653,15 +10697,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d624926087804a468e74f17e41bf965, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  WorldWidth: 100
-  WorldHeight: 100
+  WorldWidth: 300
+  WorldHeight: 300
   MainTilemap: {fileID: 512030609}
-  _player: {fileID: 1174165911}
   _destroyTileParticle: {fileID: 3362314198538771938, guid: 4eaf0e8c6e34d8946a7d6ee5b3bc60b6, type: 3}
   _pickupableItem: {fileID: 6474425278587029527, guid: bb82f183801ba09409cd5036309520ad, type: 3}
   _tileBuildableItem: {fileID: 1444201757736195248, guid: ce17743750d1cb5459da419a92171221, type: 3}
-  _playerShowTileRadius: 32
   _torchPrefab: {fileID: 3061521836199903507, guid: eeaca3c7df3dad94489e2dc5a5931f83, type: 3}
+  _hideOutsideRenderDstanceMask:
+    serializedVersion: 2
+    m_Bits: 4096
   OnWorldReady:
     m_PersistentCalls:
       m_Calls: []
@@ -12146,6 +12191,7 @@ Transform:
   m_Children:
   - {fileID: 713258634}
   - {fileID: 94410019}
+  - {fileID: 308056570}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1592424602

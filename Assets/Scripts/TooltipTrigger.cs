@@ -20,7 +20,7 @@ public class TooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             if (data == null || data.Lines == null || data.Lines.Count == 0) return;
             Vector2 tooltipPosition = Input.mousePosition + new Vector3(50, -50, 0);
 
-            TooltipManager.Instance.ShowTooltip(tooltipPosition, tooltippable.GetTooltipData());
+            TooltipManager.Instance.ShowTooltip(tooltippable.GetTooltipData());
         }
     }
 

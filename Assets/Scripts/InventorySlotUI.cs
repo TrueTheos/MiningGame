@@ -98,15 +98,9 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _rectTransform.anchoredPosition = Vector2.zero;
     }
 
-    public void OnPointerClick(PointerEventData eventData)
+    public void OnClick()
     {
-        if (eventData.button == PointerEventData.InputButton.Right && !ItemAmount.IsEmpty())
-        {
-            if (ItemAmount.Item is EquipableItem equipableItem)
-            {
-                equipableItem.ToggleEquip();
-            }
-        }
+        _inventory.ChangeSlot(this);
     }
 
     public void OnBeginDrag(PointerEventData eventData)

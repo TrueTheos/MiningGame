@@ -49,7 +49,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _monster: {fileID: 5307079044318120335, guid: 268b797877f01944a9897b9e3f9b46b4, type: 3}
   _spawnChance: 35
-  _numberOfMonsters: {x: 2, y: 5}
+  _numberOfMonsters: {x: 1, y: 4}
   _spawnRadius: 5
   _drawGizmos: 1
 --- !u!114 &8338254676118141024

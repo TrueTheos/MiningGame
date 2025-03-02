@@ -3,6 +3,7 @@ using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.Events;
@@ -23,17 +24,17 @@ public class WorldManager : MonoBehaviour
     public int WorldHeight;
     public Tilemap MainTilemap;
 
-    [SerializeField] private GameObject _player;
     [SerializeField] private ParticleSystem _destroyTileParticle;
     public ParticleSystem DestroyTileParticle => _destroyTileParticle;
     [SerializeField] private PickupableItem _pickupableItem;
     [SerializeField] private TileBuildableItem _tileBuildableItem;
-    [SerializeField] private int _playerShowTileRadius;
     [SerializeField] private LightSourceCustomBuilding _torchPrefab;
+    [SerializeField] private LayerMask _hideOutsideRenderDstanceMask;
 
     public UnityEvent OnWorldReady;
 
-    public readonly int CHUNK_SIZE = 64;
+    public const int CHUNK_SIZE = 32;
+    public readonly int RENDER_DISTANCE_CHUNKS = 1; //in each direction
 
     public TileSO[,] WorldData { get; private set; } // Stores world tiles (0 = air, 1 = dirt, 2 = stone, 3 = ore)
     public bool[,] PathNodes {  get; private set; }
@@ -50,6 +51,11 @@ public class WorldManager : MonoBehaviour
 
     private GameObject _buildingsParent;
     private GameObject _randomParent;
+
+    private ChunkManager _chunkManager;
+    private PlayerMovement _player;
+
+    private HashSet<GameObject> _objectsInRenderDistance = new();
 
     private void Awake()
     {
@@ -69,6 +75,9 @@ public class WorldManager : MonoBehaviour
 
         _randomParent = new GameObject("Random");
         _randomParent.transform.SetParent(transform);
+
+        _player = PlayerMovement.Instance;
+        _chunkManager = ChunkManager.Instance;
 
         StartCoroutine(InitWorld());        
     }
@@ -93,25 +102,74 @@ public class WorldManager : MonoBehaviour
 
     private void Update()
     {
-        Vector2Int playerPos = new Vector2Int(Mathf.RoundToInt(_player.transform.position.x), Mathf.RoundToInt(_player.transform.position.y));
-
-        if (playerPos != _lastPlayerPosition)
+        if (_player.Pos != _lastPlayerPosition)
         {
-            RefreshVisibleTiles(playerPos);
-            _lastPlayerPosition = playerPos;
+            RefreshVisibleTiles();
+            UpdateObjectsOutsideRenderDistance();
+            _lastPlayerPosition = _player.Pos;
         }
     }
 
-    private void RefreshVisibleTiles(Vector2Int playerPos)
+    private void UpdateObjectsOutsideRenderDistance()
     {
-        for (int x = playerPos.x - _playerShowTileRadius; x <= playerPos.x + _playerShowTileRadius; x++)
+        int dis = RENDER_DISTANCE_CHUNKS * CHUNK_SIZE;
+        Collider2D[] nearbyObjects = Physics2D.OverlapBoxAll(
+            transform.position,
+            new Vector2(dis * 2, dis * 2),
+            0,
+            _hideOutsideRenderDstanceMask);
+
+        HashSet<GameObject> processedObjects = new HashSet<GameObject>();
+
+        foreach (Collider2D obj in nearbyObjects)
         {
-            for (int y = playerPos.y - _playerShowTileRadius; y <= playerPos.y + _playerShowTileRadius; y++)
+            GameObject go = obj.gameObject;
+            processedObjects.Add(go);
+
+            float distance = Vector2.Distance(transform.position, go.transform.position);
+
+            if (distance <= dis)
             {
-                if (x >= 0 && x < WorldWidth && y >= 0 && y < WorldHeight)
+                if (!go.activeSelf)
                 {
-                    ShowTile(x, y);
+                    go.SetActive(true);
                 }
+
+                _objectsInRenderDistance.Add(go);
+            }
+        }
+
+        foreach (GameObject item in new List<GameObject>(_objectsInRenderDistance))
+        {
+            if (item == null)
+            {
+                _objectsInRenderDistance.Remove(item);
+                continue;
+            }
+
+            if (!processedObjects.Contains(item))
+            {
+                float distance = Vector2.Distance(transform.position, item.transform.position);
+
+                if (distance > dis)
+                {
+                    item.SetActive(false);
+                    _objectsInRenderDistance.Remove(item);
+                }
+            }
+        }
+    }
+
+    private void RefreshVisibleTiles()
+    {
+        var playerChunk = _chunkManager.GetChunkByWorldPos(_player.Pos);
+        if (playerChunk == null) return;
+
+        for (int x = playerChunk.ChunkPosX - RENDER_DISTANCE_CHUNKS; x <= playerChunk.ChunkPosX + RENDER_DISTANCE_CHUNKS; x++)
+        {
+            for (int y = playerChunk.ChunkPosY - RENDER_DISTANCE_CHUNKS; y <= playerChunk.ChunkPosY + RENDER_DISTANCE_CHUNKS; y++)
+            {
+                _chunkManager.RenderChunk(x, y);
             }
         }
     }
@@ -141,12 +199,13 @@ public class WorldManager : MonoBehaviour
         }
 
         MainTilemap.GetComponent<TilemapCollider2D>().enabled = true;
-        _player.transform.position = new Vector2(WorldWidth / 2, WorldHeight / 2);
-        _player.gameObject.SetActive(true);
-
+       
         TryPlace(WorldWidth / 2, WorldHeight / 2 - 1, _torchPrefab);
 
         Ready = true;
+
+        _player.transform.position = new Vector2(WorldWidth / 2, WorldHeight / 2 + 1);
+        _player.gameObject.SetActive(true);
 
         Debug.Log($"WORLD GENERATED: {Time.time - time}");
     }
@@ -394,8 +453,9 @@ public class WorldManager : MonoBehaviour
         PathNodes[x, y] = isFree && hasSolidSupport;
     }
 
-    private void ShowTile(int x, int y)
+    public void ShowTile(int x, int y)
     {
+        if (!IsTileInBounds(x, y)) return;
         var tile = WorldData[x,y];
         if (tile != null) MainTilemap.SetTile(new Vector3Int(x, y, 0), tile.Tile);
         else MainTilemap.SetTile(new Vector3Int(x, y, 0), null);

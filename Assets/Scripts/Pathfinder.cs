@@ -5,7 +5,7 @@ using UnityEngine;
 
 public static class Pathfinder
 {
-    public static List<PathNode> AStar(PathNode start, PathNode goal, Dictionary<Vector2Int, PathNode> nodes)
+    public static Queue<PathNode> AStar(PathNode start, PathNode goal, Dictionary<Vector2Int, PathNode> nodes)
     {
         var openSet = new List<PathNode> { start };
         var cameFrom = new Dictionary<PathNode, PathNode>();
@@ -69,7 +69,7 @@ public static class Pathfinder
         };
     }
 
-    private static List<PathNode> ReconstructPath(Dictionary<PathNode, PathNode> cameFrom, PathNode current)
+    private static Queue<PathNode> ReconstructPath(Dictionary<PathNode, PathNode> cameFrom, PathNode current)
     {
         var totalPath = new List<PathNode> { current };
         while (cameFrom.ContainsKey(current))
@@ -77,7 +77,8 @@ public static class Pathfinder
             current = cameFrom[current];
             totalPath.Insert(0, current);
         }
-        return totalPath;
+
+        return new Queue<PathNode>(totalPath);
     }
 
 

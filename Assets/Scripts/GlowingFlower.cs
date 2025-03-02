@@ -35,7 +35,7 @@ public class GlowingFlower : MonoBehaviour
             Vector2Int? freeCell = _worldManager.GetRandomFreeCellInCircle(pos, _spawnRadius);
             if (freeCell == null) break;
 
-            AtikiMonster atiki = Instantiate(_monster.gameObject, freeCell.Value.ToVector3(), Quaternion.identity).GetComponent<AtikiMonster>();
+            AtikiMonster atiki = Instantiate(_monster.gameObject, freeCell.Value.ToVector3(offset: .5f), Quaternion.identity).GetComponent<AtikiMonster>();
             _monsters.Add(atiki);
         }
     }

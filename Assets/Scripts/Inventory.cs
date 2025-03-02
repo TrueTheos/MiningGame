@@ -57,7 +57,7 @@ public class Inventory : MonoBehaviour
             AddItem(startItem);
         }
 
-        ChangeItem(_currentSlotIndex);
+        ChangeSlot(_currentSlotIndex);
         ToggleInventory(false);
     }
 
@@ -68,7 +68,7 @@ public class Inventory : MonoBehaviour
             if (Input.GetKeyDown(i.ToString()))
             {
                 _currentSlotIndex = i - 1;
-                ChangeItem(_currentSlotIndex);
+                ChangeSlot(_currentSlotIndex);
             }
         }
 
@@ -219,7 +219,14 @@ public class Inventory : MonoBehaviour
         }
     }
 
-    private void ChangeItem(int slotIndex)
+    public void ChangeSlot(InventorySlotUI slot)
+    {
+        if (!_slotsUI.Contains(slot)) return;
+
+        ChangeSlot(_slotsUI.IndexOf(slot));
+    }
+
+    private void ChangeSlot(int slotIndex)
     {
         var slot = _slotsUI[slotIndex];
 

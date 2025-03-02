@@ -32,6 +32,9 @@ public class PlayerMovement : MonoBehaviour
 
     public Vector2Int Pos => new Vector2Int(X, Y);
 
+    public int ChunkX => Mathf.FloorToInt(X / WorldManager.CHUNK_SIZE);
+    public int ChunkY => Mathf.FloorToInt(Y / WorldManager.CHUNK_SIZE);
+
     [SerializeField] private float _speed;
     [SerializeField] private float _jumpingPower;
     [SerializeField] private float _climbSpeed;

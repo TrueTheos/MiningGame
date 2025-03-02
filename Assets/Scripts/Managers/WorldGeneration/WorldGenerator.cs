@@ -187,7 +187,7 @@ namespace Assets.Scripts.Managers.WorldGeneration
         private int _worldWidth => _worldManager.WorldWidth;
         private int _worldHeight => _worldManager.WorldHeight;
 
-        private int CHUNK_SIZE => _worldManager.CHUNK_SIZE;
+        private int _chunkSize;
 
         private bool _ready = false;
 
@@ -205,6 +205,7 @@ namespace Assets.Scripts.Managers.WorldGeneration
         public void Generate(WorldManager wm)
         {
             _worldManager = wm;
+            _chunkSize = WorldManager.CHUNK_SIZE;
             _worldManager.MainTilemap.ClearAllTiles();
             StartCoroutine(GenerateWorldCoroutine());
         }
@@ -214,8 +215,8 @@ namespace Assets.Scripts.Managers.WorldGeneration
             _generationUIParent.gameObject.SetActive(true);
 
             _ready = false;
-            int numChunksX = Mathf.CeilToInt((float)_worldManager.WorldWidth / CHUNK_SIZE);
-            int numChunksY = Mathf.CeilToInt((float)_worldManager.WorldHeight / CHUNK_SIZE);
+            int numChunksX = Mathf.CeilToInt((float)_worldManager.WorldWidth / _chunkSize);
+            int numChunksY = Mathf.CeilToInt((float)_worldManager.WorldHeight / _chunkSize);
 
             // Generate base terrain and caves chunk by chunk
             int chunksToGen = numChunksX * numChunksY;
@@ -344,10 +345,10 @@ namespace Assets.Scripts.Managers.WorldGeneration
 
         private void GenerateChunk(int chunkX, int chunkY)
         {
-            int startX = chunkX * CHUNK_SIZE;
-            int startY = chunkY * CHUNK_SIZE;
-            int endX = Mathf.Min(startX + CHUNK_SIZE, _worldManager.WorldWidth);
-            int endY = Mathf.Min(startY + CHUNK_SIZE, _worldManager.WorldHeight);
+            int startX = chunkX * _chunkSize;
+            int startY = chunkY * _chunkSize;
+            int endX = Mathf.Min(startX + _chunkSize, _worldManager.WorldWidth);
+            int endY = Mathf.Min(startY + _chunkSize, _worldManager.WorldHeight);
 
             // Generate terrain and initial caves for this chunk
             for (int x = startX; x < endX; x++)
@@ -439,13 +440,13 @@ namespace Assets.Scripts.Managers.WorldGeneration
         {
             var newMap = new TileSO[_worldManager.WorldWidth, _worldManager.WorldHeight];
 
-            for (int chunkX = 0; chunkX < _worldManager.WorldWidth; chunkX += CHUNK_SIZE)
+            for (int chunkX = 0; chunkX < _worldManager.WorldWidth; chunkX += _chunkSize)
             {
-                for (int chunkY = 0; chunkY < _worldManager.WorldHeight; chunkY += CHUNK_SIZE)
+                for (int chunkY = 0; chunkY < _worldManager.WorldHeight; chunkY += _chunkSize)
                 {
                     ProcessCellularAutomataChunk(chunkX, chunkY, newMap);
 
-                    if ((chunkX + chunkY) % (CHUNK_SIZE * 2) == 0)
+                    if ((chunkX + chunkY) % (_chunkSize * 2) == 0)
                         yield return null;
                 }
             }
@@ -464,8 +465,8 @@ namespace Assets.Scripts.Managers.WorldGeneration
 
         private void ProcessCellularAutomataChunk(int startX, int startY, TileSO[,] newMap)
         {
-            int endX = Mathf.Min(startX + CHUNK_SIZE, _worldManager.WorldWidth);
-            int endY = Mathf.Min(startY + CHUNK_SIZE, _worldManager.WorldHeight);
+            int endX = Mathf.Min(startX + _chunkSize, _worldManager.WorldWidth);
+            int endY = Mathf.Min(startY + _chunkSize, _worldManager.WorldHeight);
 
             for (int x = startX; x < endX; x++)
             {

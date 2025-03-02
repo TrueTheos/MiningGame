@@ -6,19 +6,17 @@ using UnityEngine.UI;
 
 public class TooltipManager : MonoBehaviour
 {
-    [SerializeField] private GameObject tooltipPrefab;
-    private GameObject _currentTooltip;
-    private RectTransform _tooltipRectTransform;
-    private bool isTooltipVisible = false;
-
-    [Header("Tooltip Sizing")]
-    [SerializeField] private float horizontalPadding = 20f;
-    [SerializeField] private float verticalPadding = 10f;
-    [SerializeField] private float minWidth = 100f;
-    [SerializeField] private float maxWidth = 300f;
-    [SerializeField] private TMP_FontAsset font;
-
     public static TooltipManager Instance { get; private set; }
+
+    [Header("Tooltip Settings")]
+    [SerializeField] private GameObject tooltipPrefab;  // Prefab with a background and a child TextMeshProUGUI.
+    [SerializeField] private float fixedTooltipWidth = 300f;  // Set the tooltip's constant width.
+    [SerializeField] private Vector2 tooltipOffset = new Vector2(10f, -10f);  // Offset relative to the mouse.
+
+    private GameObject currentTooltip;
+    private RectTransform tooltipRectTransform;
+    private RectTransform contentRectTransform;
+    private bool isTooltipVisible = false;
 
     private void Awake()
     {
@@ -35,100 +33,120 @@ public class TooltipManager : MonoBehaviour
 
     private void Update()
     {
-        if (isTooltipVisible) PositionTooltipNearMouse();
+        if (isTooltipVisible)
+        {
+            PositionTooltipNearMouse();
+        }
     }
 
-    public void ShowTooltip(Vector2 position, TooltipData tooltipData)
+    public void ShowTooltip(TooltipData tooltipData)
     {
-        if (_currentTooltip != null)
+        // Remove any existing tooltip.
+        if (currentTooltip != null)
         {
-            Destroy(_currentTooltip);
+            Destroy(currentTooltip);
         }
 
-        _currentTooltip = Instantiate(tooltipPrefab, transform);
-        _tooltipRectTransform = _currentTooltip.GetComponent<RectTransform>();
+        // Instantiate the tooltip prefab.
+        currentTooltip = Instantiate(tooltipPrefab, transform);
+        tooltipRectTransform = currentTooltip.GetComponent<RectTransform>();
 
+        // Try to find a "Content" container inside the tooltip prefab.
+        Transform contentTransform = currentTooltip.transform.Find("Content");
+        if (contentTransform != null)
+        {
+            contentRectTransform = contentTransform.GetComponent<RectTransform>();
+        }
+        else
+        {
+            // Fallback: use the tooltip's RectTransform directly.
+            contentRectTransform = tooltipRectTransform;
+        }
+
+        // Clear any existing children (in case the prefab has preset objects).
+        foreach (Transform child in contentRectTransform)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // Create text elements for each line in the TooltipData.
         foreach (var line in tooltipData.Lines)
         {
             CreateTextElement(line);
         }
 
-        StartCoroutine(AdjustTooltipSize());
+        // Force a layout rebuild to ensure the content's preferred height is calculated.
+        LayoutRebuilder.ForceRebuildLayoutImmediate(contentRectTransform);
+        float calculatedHeight = LayoutUtility.GetPreferredHeight(contentRectTransform);
+
+        // Set the tooltip's size with a fixed width and the calculated height.
+        tooltipRectTransform.sizeDelta = new Vector2(fixedTooltipWidth, calculatedHeight);
+
+        // Position the tooltip near the mouse.
+        PositionTooltipNearMouse();
+        currentTooltip.SetActive(true);
+        isTooltipVisible = true;
     }
 
-    private void PositionTooltipNearMouse()
-    {
-        if (_tooltipRectTransform == null) return;
-
-        Canvas canvas = GetComponentInParent<Canvas>();
-        RectTransform canvasRectTransform = canvas.GetComponent<RectTransform>();
-
-        Vector2 mousePosition = Input.mousePosition;
-        Vector2 tooltipSize = _tooltipRectTransform.rect.size;
-
-        Vector2 offset = new Vector2(tooltipSize.x / 2, tooltipSize.y / 2);
-
-        Vector2 proposedPosition = mousePosition + offset;
-
-        if (proposedPosition.x + tooltipSize.x > canvasRectTransform.rect.width)
-        {
-            proposedPosition.x = mousePosition.x - tooltipSize.x - 20;
-        }
-
-        if (proposedPosition.y - tooltipSize.y < 0)
-        {
-            proposedPosition.y = mousePosition.y + tooltipSize.y + 20;
-        }
-
-        _tooltipRectTransform.position = proposedPosition;
-    }
-
+    /// <summary>
+    /// Creates a text element based on a TooltipLine and adds it to the tooltip.
+    /// </summary>
+    /// <param name="lineData">The tooltip line data (text, font size, and color).</param>
     private void CreateTextElement(TooltipData.TooltipLine lineData)
     {
-        GameObject textObject = new GameObject("TooltipLine");
-        TextMeshProUGUI textComponent = textObject.AddComponent<TextMeshProUGUI>();
+        // Create a new GameObject for the text line.
+        GameObject textObj = new GameObject("TooltipLine");
+        textObj.transform.SetParent(contentRectTransform, false);
 
-        RectTransform rectTransform = textComponent.rectTransform;
-        rectTransform.anchorMin = new Vector2(0, 0);
-        rectTransform.anchorMax = new Vector2(1, 0);
-        rectTransform.sizeDelta = new Vector2(0, lineData.fontSize * 1.5f);
-
+        // Add a TextMeshProUGUI component and set its properties.
+        TextMeshProUGUI textComponent = textObj.AddComponent<TextMeshProUGUI>();
         textComponent.text = lineData.text;
         textComponent.fontSize = lineData.fontSize;
         textComponent.color = lineData.textColor;
-        textComponent.raycastTarget = false;
-        textComponent.font = font;
+        textComponent.enableWordWrapping = true;
 
-        textComponent.transform.SetParent(_currentTooltip.transform, false);
-    }
+        // Set the fixed width for this text element.
+        textComponent.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, fixedTooltipWidth);
 
-    private IEnumerator AdjustTooltipSize()
-    {
-        yield return new WaitForEndOfFrame();
-
-        float preferredHeight = LayoutUtility.GetPreferredHeight(_currentTooltip.GetComponent<RectTransform>());
-
-        float preferredWidth = Mathf.Clamp(
-            LayoutUtility.GetPreferredWidth(_currentTooltip.GetComponent<RectTransform>()) + horizontalPadding * 2,
-            minWidth,
-            maxWidth
-        );
-
-        _currentTooltip.GetComponent<RectTransform>().sizeDelta = new Vector2(
-            preferredWidth,
-            preferredHeight + verticalPadding * 2
-        );
-
-        PositionTooltipNearMouse();
-
-        isTooltipVisible = true;
+        // Optional: add a LayoutElement to help the layout group compute sizes.
+        LayoutElement layoutElem = textObj.AddComponent<LayoutElement>();
+        layoutElem.preferredWidth = fixedTooltipWidth;
     }
 
     public void HideTooltip()
     {
-        if (_currentTooltip != null)
+        if (currentTooltip != null)
         {
-            Destroy(_currentTooltip);
+            Destroy(currentTooltip);
+            isTooltipVisible = false;
         }
+    }
+
+    private void PositionTooltipNearMouse()
+    {
+        if (tooltipRectTransform == null)
+            return;
+
+        Canvas canvas = GetComponentInParent<Canvas>();
+        RectTransform canvasRectTransform = canvas.GetComponent<RectTransform>();
+        Vector2 mousePosition = Input.mousePosition;
+
+        // Set the pivot to the top-left so the tooltip expands downward/right.
+        tooltipRectTransform.pivot = new Vector2(0, 1);
+        Vector2 proposedPosition = mousePosition + tooltipOffset;
+
+        // Adjust if the tooltip goes beyond the right edge.
+        if (proposedPosition.x + fixedTooltipWidth > canvasRectTransform.rect.width)
+        {
+            proposedPosition.x = canvasRectTransform.rect.width - fixedTooltipWidth;
+        }
+
+        // Adjust if the tooltip goes below the bottom edge.
+        if (proposedPosition.y - tooltipRectTransform.rect.height < 0)
+        {
+            proposedPosition.y = tooltipRectTransform.rect.height;
+        }
+
+        tooltipRectTransform.position = proposedPosition;
     }
 }
