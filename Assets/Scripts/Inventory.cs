@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.Experimental.GraphView;
 using UnityEditorInternal.Profiling.Memory.Experimental;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -67,12 +68,22 @@ public class Inventory : MonoBehaviour
         {
             if (Input.GetKeyDown(i.ToString()))
             {
-                _currentSlotIndex = i - 1;
-                ChangeSlot(_currentSlotIndex);
+                ChangeSlot(i - 1);
             }
         }
 
-        if(Input.GetKeyDown(KeyCode.Tab)) ToggleInventory(true);
+        if (Input.GetAxis("Mouse ScrollWheel") > 0f)
+        {
+            if (_currentSlotIndex + 1 >= firstRowCount) ChangeSlot(0);
+            else ChangeSlot(_currentSlotIndex + 1);
+        }
+        else if (Input.GetAxis("Mouse ScrollWheel") < 0f)
+        {
+            if (_currentSlotIndex - 1 < 0) ChangeSlot(firstRowCount - 1);
+            else ChangeSlot(_currentSlotIndex - 1);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Tab)) ToggleInventory(true);
 
         if(Input.GetKeyUp(KeyCode.Tab)) ToggleInventory(false);
 
@@ -89,7 +100,7 @@ public class Inventory : MonoBehaviour
 
     private void ToggleInventory(bool value)
     {
-        for (int i = firstRowCount - 1; i < _slotsUI.Count; i++)
+        for (int i = firstRowCount; i < _slotsUI.Count; i++)
         {
             _slotsUI[i].ToggleVisibility(value);
         }
@@ -228,7 +239,10 @@ public class Inventory : MonoBehaviour
 
     private void ChangeSlot(int slotIndex)
     {
+        _slotsUI[_currentSlotIndex].OnDeselect();
+        _currentSlotIndex = slotIndex;
         var slot = _slotsUI[slotIndex];
+        slot.OnSelect();
 
         if (CurrentItem != null)
         {

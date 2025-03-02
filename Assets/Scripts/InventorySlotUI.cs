@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using static TooltipData;
-using static UnityEditor.Progress;
+using Image = UnityEngine.UI.Image;
 
 public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, ITooltip
 {
@@ -13,6 +12,8 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     [SerializeField] private Image _icon;
     [SerializeField] private TextMeshProUGUI _quantityText;
     [SerializeField] private bool _equipmentSlot;
+    [SerializeField] private Color _selectColor;
+    [SerializeField] private Image _background;
     public bool EquipmentSlot => _equipmentSlot;
 
     public ItemAmount ItemAmount { get; private set; }
@@ -26,6 +27,7 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private Inventory _inventory;
     private Canvas _canvas;
     private Vector2 _dragOffset;
+    private Color _defaultColor;
 
     private void Awake()
     {
@@ -41,6 +43,7 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private void Start()
     {
         _inventory = Inventory.Instance;
+        _defaultColor = _background.color;
     }
 
     public void SetItem(ItemAmount itemAmount)
@@ -171,6 +174,16 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         };
 
         return TooltipData.Create(lines.ToArray());
+    }
+
+    public void OnDeselect()
+    {
+        _background.color = _defaultColor;
+    }
+
+    public void OnSelect()
+    {
+        _background.color = _selectColor;
     }
 
     public void ToggleVisibility(bool vis)

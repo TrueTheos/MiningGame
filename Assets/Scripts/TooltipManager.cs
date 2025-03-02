@@ -9,9 +9,10 @@ public class TooltipManager : MonoBehaviour
     public static TooltipManager Instance { get; private set; }
 
     [Header("Tooltip Settings")]
-    [SerializeField] private GameObject tooltipPrefab;  // Prefab with a background and a child TextMeshProUGUI.
-    [SerializeField] private float fixedTooltipWidth = 300f;  // Set the tooltip's constant width.
-    [SerializeField] private Vector2 tooltipOffset = new Vector2(10f, -10f);  // Offset relative to the mouse.
+    [SerializeField] private GameObject tooltipPrefab;
+    [SerializeField] private float fixedTooltipWidth = 300f;
+    [SerializeField] private Vector2 tooltipOffset = new Vector2(10f, -10f);
+    [SerializeField] private TMP_FontAsset fontAsset;
 
     private GameObject currentTooltip;
     private RectTransform tooltipRectTransform;
@@ -101,6 +102,7 @@ public class TooltipManager : MonoBehaviour
         // Add a TextMeshProUGUI component and set its properties.
         TextMeshProUGUI textComponent = textObj.AddComponent<TextMeshProUGUI>();
         textComponent.text = lineData.text;
+        textComponent.font = fontAsset;
         textComponent.fontSize = lineData.fontSize;
         textComponent.color = lineData.textColor;
         textComponent.enableWordWrapping = true;
