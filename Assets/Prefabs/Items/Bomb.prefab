@@ -50,8 +50,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Bomb
   SpriteRend: {fileID: 4997985514340520467}
+  _throwPower: 12
+  IsThrown: 0
   Radius: 3
-  ThrowPower: 15
   ExplodeOnCollision: 0
   ExplodeTime: 3
   Sticky: 0

@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using static TooltipData;
+using static UnityEditor.Experimental.GraphView.GraphView;
 using Image = UnityEngine.UI.Image;
 
 public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, ITooltip
@@ -28,6 +29,8 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private Canvas _canvas;
     private Vector2 _dragOffset;
     private Color _defaultColor;
+
+    private bool _isSelected;
 
     private void Awake()
     {
@@ -178,12 +181,31 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public void OnDeselect()
     {
+        if(!ItemAmount.IsEmpty())
+        {
+            var item = ItemAmount.Item;
+            item.gameObject.transform.SetParent(PlayerMovement.Instance.transform);
+            item.gameObject.SetActive(false);
+        }
+
+        _isSelected = false;
         _background.color = _defaultColor;
     }
 
-    public void OnSelect()
+    public Item OnSelect(Transform itemHolder)
     {
+        _isSelected = true;
         _background.color = _selectColor;
+
+        if (!ItemAmount.IsEmpty())
+        {
+            var item = ItemAmount.Item;
+            item.gameObject.transform.SetParent(itemHolder);
+            item.gameObject.SetActive(true);
+            item.gameObject.transform.localPosition = Vector3.zero;
+            return item;
+        }
+        return null;
     }
 
     public void ToggleVisibility(bool vis)
@@ -191,7 +213,10 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         _icon.gameObject.SetActive(vis);
         _quantityText.gameObject.SetActive(vis);
 
-        transform.parent.GetComponent<Image>().enabled = vis;
+        if (transform.parent != null)
+        {
+            transform.parent.GetComponent<Image>().enabled = vis;
+        }
         GetComponent<Image>().enabled = vis;
     }
 }

@@ -15,7 +15,7 @@ public class GlowStick : ThrowableItem
         _light2D.gameObject.SetActive(false);
     }
 
-    public override void OnThrow()
+    public override void OnThrow(Vector2 origin, float power)
     {
         _light2D.gameObject.SetActive(true);
     }

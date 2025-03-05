@@ -1,12 +1,17 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.Mesh;
 
 public abstract class Item : MonoBehaviour
 {
     public string Name;
     public SpriteRenderer SpriteRend;
+
+    protected Transform _hand => PlayerMovement.Instance.Hand;
+
+    public void OnEnable()
+    {
+        if(SpriteRend != null) SpriteRend.sortingOrder = 6;
+    }
 
     public virtual void Holding() { }
     public virtual void EndUse() { }

@@ -11,7 +11,7 @@ public class Bomb : ThrowableItem
     public bool Sticky;
     public AudioPoint Audio;
 
-    public override void OnThrow()
+    public override void OnThrow(Vector2 origin, float power)
     {
         if (ExplodeTime > 0) StartCoroutine(ExplodeAfterDelay());
     }

@@ -23,7 +23,7 @@ public struct StatModifier
     }
 }
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : Entity
 {
     public static PlayerMovement Instance { get; private set; }
 
@@ -57,6 +57,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private LayerMask _groundLayer;
     [SerializeField] private SpriteRenderer _art;
     [SerializeField] private Transform _hand;
+    public Transform Hand => _hand;
     private Rigidbody2D _rb;
 
     #region States

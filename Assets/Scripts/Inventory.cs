@@ -16,11 +16,12 @@ public class Inventory : MonoBehaviour
 
     [Header("Inventory Settings")]
     [SerializeField] private int slotCount;
-    [SerializeField] private int firstRowCount;
+    [SerializeField] private int hotbarLength;
     [SerializeField] private GameObject _slotPrefab;
     [SerializeField] private Transform _slotsParent;
     [SerializeField] private List<InventorySlotUI> _equipmentSlots = new();
     private List<InventorySlotUI> _slotsUI = new();
+    private InventorySlotUI[] _hotbar;
     private int _currentSlotIndex = 0;
 
     private GameObject _player;
@@ -34,12 +35,19 @@ public class Inventory : MonoBehaviour
         }
         Instance = this;
 
+        _hotbar = new InventorySlotUI[hotbarLength];
+
         for (int i = 0; i < slotCount; i++)
         {
             var newSlot = Instantiate(_slotPrefab, _slotsParent.transform);
             InventorySlotUI slotUI = newSlot.GetComponentInChildren<InventorySlotUI>();
             slotUI.SlotIndex = i;
             _slotsUI.Add(slotUI);
+        }
+
+        for (int i = 0; i < hotbarLength; i++)
+        {
+            _hotbar[i] = _slotsUI[i];
         }
     }
 
@@ -64,7 +72,7 @@ public class Inventory : MonoBehaviour
 
     private void Update()
     {
-        for (int i = 1; i <= firstRowCount; i++)
+        for (int i = 1; i <= hotbarLength; i++)
         {
             if (Input.GetKeyDown(i.ToString()))
             {
@@ -74,12 +82,12 @@ public class Inventory : MonoBehaviour
 
         if (Input.GetAxis("Mouse ScrollWheel") > 0f)
         {
-            if (_currentSlotIndex + 1 >= firstRowCount) ChangeSlot(0);
+            if (_currentSlotIndex + 1 >= hotbarLength) ChangeSlot(0);
             else ChangeSlot(_currentSlotIndex + 1);
         }
         else if (Input.GetAxis("Mouse ScrollWheel") < 0f)
         {
-            if (_currentSlotIndex - 1 < 0) ChangeSlot(firstRowCount - 1);
+            if (_currentSlotIndex - 1 < 0) ChangeSlot(hotbarLength - 1);
             else ChangeSlot(_currentSlotIndex - 1);
         }
 
@@ -100,7 +108,7 @@ public class Inventory : MonoBehaviour
 
     private void ToggleInventory(bool value)
     {
-        for (int i = firstRowCount; i < _slotsUI.Count; i++)
+        for (int i = hotbarLength; i < _slotsUI.Count; i++)
         {
             _slotsUI[i].ToggleVisibility(value);
         }
@@ -203,6 +211,8 @@ public class Inventory : MonoBehaviour
             newItem.SetActive(false);
             toSlot.SetItem(new ItemAmount(newItem.GetComponent<Item>(), fromSlot.ItemAmount.Amount));
             fromSlot.ClearSlot();
+
+            if(_hotbar.Contains(toSlot)) ChangeSlot(toSlot);
         }
         else if (toSlot.ItemAmount.Item.EqualsType(fromSlot.ItemAmount.Item))
         {
@@ -242,25 +252,7 @@ public class Inventory : MonoBehaviour
         _slotsUI[_currentSlotIndex].OnDeselect();
         _currentSlotIndex = slotIndex;
         var slot = _slotsUI[slotIndex];
-        slot.OnSelect();
-
-        if (CurrentItem != null)
-        {
-            CurrentItem.gameObject.transform.SetParent(_player.transform);
-            CurrentItem.gameObject.SetActive(false);
-        }
-
-        if (!slot.ItemAmount.IsEmpty() && _itemHolder != null)
-        {
-            CurrentItem = slot.ItemAmount.Item;
-            CurrentItem.gameObject.transform.SetParent(_itemHolder.transform);
-            CurrentItem.gameObject.SetActive(true);
-            CurrentItem.gameObject.transform.localPosition = Vector3.zero;
-        }
-        else
-        {
-            CurrentItem = null;
-        }
+        CurrentItem = slot.OnSelect(_itemHolder.transform);
     }
 
     public bool AddItem(ItemAmount itemAmount)

@@ -2,13 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using static UnityEditor.Experimental.GraphView.GraphView;
 
-public abstract class Monster : MonoBehaviour, IChunkObject
+public abstract class Monster : Entity, IChunkObject
 {
-    [SerializeField] private int _maxHealth;
-    public int CurrentHealth;
-
     public abstract float MovementSpeed { get; protected set; }
     public abstract float JumpPower { get; protected set; }
 
@@ -46,7 +42,14 @@ public abstract class Monster : MonoBehaviour, IChunkObject
     [Header("Debug")]
     [SerializeField] private bool _reachedTarget;
 
-    public Vector2 Position => transform.position;
+    public Vector2 Position
+    {
+        get
+        {
+            if (this == null || transform == null) return Vector2.zero;
+            return transform.position;
+        }
+    }
 
     protected virtual void Awake()
     {
@@ -71,18 +74,6 @@ public abstract class Monster : MonoBehaviour, IChunkObject
         return _player.Pos;
     }
 
-    [ContextMenu("Test take damage")]
-    public void TakeDamage(int damage)
-    {
-        CurrentHealth -= damage;
-        OnTakeDamage();
-
-        if (CurrentHealth <= 0) Die();
-    }
-
-    public virtual void OnTakeDamage() { }
-
-    public virtual void OnDie() { }
     public abstract bool IsGrounded();
     public abstract void PerformJump(Vector2 targetPosition);
     public abstract void MaintainJumpMovement(Vector2 targetPosition);
@@ -100,13 +91,6 @@ public abstract class Monster : MonoBehaviour, IChunkObject
         }
     }
 
-    public void Die()
-    {
-        OnDie();
-
-        Destroy(gameObject);
-    }
-
     public void SetCurrentTargetNode(PathNode node)
     {
         CurrentTargetNode = node;
@@ -115,6 +99,12 @@ public abstract class Monster : MonoBehaviour, IChunkObject
     public void UpdatePathCalculationTime()
     {
         _lastPathCalcTime = Time.time;
+    }
+
+    public override void OnDie()
+    {
+        base.OnDie();
+        Destroy(gameObject);
     }
 
     public void IncrementPathIndex()

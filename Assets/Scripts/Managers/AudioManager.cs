@@ -17,6 +17,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private List<SFX> _mineClips;
     [SerializeField] private SFX _pickupClip;
     [SerializeField] private SFX _placeClip;
+    [SerializeField] private SFX _spearThrow;
 
     private AudioSource _source;
 
@@ -40,6 +41,7 @@ public class AudioManager : MonoBehaviour
     public void PlayMine() => Play(_mineClips.Random());
     public void PlayPickup() => Play(_pickupClip);
     public void PlayPlace() => Play(_placeClip);
+    public void PlaySpearThrow() => Play(_spearThrow);
 
     public void Play(AudioClip clip)
     {

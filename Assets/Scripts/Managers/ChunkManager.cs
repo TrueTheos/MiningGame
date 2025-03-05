@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using UnityEngine;
 using static UnityEditor.Experimental.GraphView.GraphView;
+using static UnityEngine.RuleTile.TilingRuleOutput;
 
 public class ChunkManager : MonoBehaviour
 {
@@ -77,9 +78,12 @@ public class ChunkManager : MonoBehaviour
 
             MonoBehaviour mono = obj as MonoBehaviour;
 
-            mono.transform.SetParent(currentChunk.transform);
+            if (mono != null)
+            {
+                mono.transform.SetParent(currentChunk.transform);
 
-            mono.gameObject.SetActive(_visibleChunks.Contains(currentChunk));
+                mono.gameObject.SetActive(_visibleChunks.Contains(currentChunk));
+            }
         }
     }
 
@@ -234,6 +238,14 @@ public class Chunk : MonoBehaviour
 
 public interface IChunkObject
 {
-    //public Vector2 Position => transform.position;
     Vector2 Position { get; }
+
+    /* public Vector2 Position
+    {
+        get
+        {
+            if (this == null || transform == null) return Vector2.zero;
+            return transform.position;
+        }
+    }*/
 }
