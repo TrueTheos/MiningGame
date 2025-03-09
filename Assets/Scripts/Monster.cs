@@ -5,6 +5,8 @@ using UnityEngine;
 
 public abstract class Monster : Entity, IChunkObject
 {
+    [HideInInspector] public abstract MonsterType Type { get; }
+
     public abstract float MovementSpeed { get; protected set; }
     public abstract float JumpPower { get; protected set; }
 
@@ -61,7 +63,6 @@ public abstract class Monster : Entity, IChunkObject
     protected virtual void Start()
     {
         _player = PlayerMovement.Instance;
-        ChunkManager.Instance.AddObjectToChunk(this);
     }
 
     protected void UpdatePosition()

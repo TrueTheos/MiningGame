@@ -43,6 +43,8 @@ public class AtikiMonster : Monster
     public override MonsterFollowingPathState _followPathState { get; set; }
     public AtikiEnragedState _enragedState { get; private set; }
     public AtikiWanderState _wanderState { get; private set; }
+
+    public override MonsterType Type => MonsterType.Atiki;
     #endregion
 
     private Vector2 _targetJumpPosition;

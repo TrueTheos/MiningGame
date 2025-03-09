@@ -80,9 +80,11 @@ public class ChunkManager : MonoBehaviour
 
             if (mono != null)
             {
-                mono.transform.SetParent(currentChunk.transform);
-
                 mono.gameObject.SetActive(_visibleChunks.Contains(currentChunk));
+            }
+            else
+            {
+                Debug.LogError("NOT EVEN CALLED?");
             }
         }
     }
@@ -92,7 +94,11 @@ public class ChunkManager : MonoBehaviour
         int chunkIndexX = Mathf.FloorToInt(pos.x / _chunkSize);
         int chunkIndexY = Mathf.FloorToInt(pos.y / _chunkSize);
 
-        if(!IsChunksInBounds(chunkIndexX, chunkIndexY)) return null;
+        if (!IsChunksInBounds(chunkIndexX, chunkIndexY))
+        {
+            Debug.LogError("NULL CHUNK?");
+            return null;
+        }
         return _chunks[chunkIndexX, chunkIndexY];
     }
 
@@ -119,7 +125,11 @@ public class ChunkManager : MonoBehaviour
     public void AddObjectToChunk(IChunkObject obj)
     {
         var chunk = GetChunkByWorldPos(obj.Position);
-        if(chunk == null) return;
+        if (chunk == null)
+        {
+            Debug.LogError($"ADD TO NULL CHUNK? {obj.Position}");
+            return;
+        }
 
         chunk.AddObject(obj);
     }
@@ -191,14 +201,14 @@ public class Chunk : MonoBehaviour
 
         _active = active;
         gameObject.SetActive(active);
-        /*foreach (IChunkObject obj in ChunkObjects)
+        foreach (IChunkObject obj in ChunkObjects)
         {
             MonoBehaviour mb = obj as MonoBehaviour;
             if (mb != null)
             {
                 mb.gameObject.SetActive(active);
             }
-        }*/
+        }
     }
 
     public void AddObject(IChunkObject obj)
@@ -207,6 +217,7 @@ public class Chunk : MonoBehaviour
         {
             ChunkObjects.Add(obj);
             MonoBehaviour mb = obj as MonoBehaviour;
+            mb.transform.SetParent(transform);
             if (mb != null)
             {
                 mb.gameObject.SetActive(_active);
@@ -233,6 +244,13 @@ public class Chunk : MonoBehaviour
         }
 
         Rendered = true;
+    }
+
+    public void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Rendered ? Color.green : Color.red;
+
+        Gizmos.DrawWireCube(new(_worldX + _chunkSize / 2, _worldY + _chunkSize / 2), new(_chunkSize, _chunkSize));
     }
 }
 

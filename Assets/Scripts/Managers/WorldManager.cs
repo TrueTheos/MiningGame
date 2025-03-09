@@ -322,9 +322,9 @@ public class WorldManager : MonoBehaviour
 
             SetTile(x, y, null);
 
-            for (int nx = x - 1; nx < x + 1; nx++)
+            for (int nx = x - 1; nx <= x + 1; nx++)
             {
-                for (int ny = y - 1; ny < y + 1; ny++)
+                for (int ny = y - 1; ny <= y + 1; ny++)
                 {
                     if (!IsTileInBounds(nx,ny)) continue;
                     var building = Buildings[nx, ny];

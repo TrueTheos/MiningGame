@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class GlowingFlower : MonoBehaviour
 {
-    [SerializeField] private AtikiMonster _monster;
     [SerializeField] private int _spawnChance;
     [SerializeField] private Vector2Int _numberOfMonsters;
     [SerializeField] private int _spawnRadius;
@@ -35,7 +34,7 @@ public class GlowingFlower : MonoBehaviour
             Vector2Int? freeCell = _worldManager.GetRandomFreeCellInCircle(pos, _spawnRadius);
             if (freeCell == null) break;
 
-            AtikiMonster atiki = Instantiate(_monster.gameObject, freeCell.Value.ToVector3(offset: .5f), Quaternion.identity).GetComponent<AtikiMonster>();
+            AtikiMonster atiki = MonsterFactory.Instance.SpawnMonster(MonsterType.Atiki, freeCell.Value.ToVector3(offset: .5f)) as AtikiMonster;
             _monsters.Add(atiki);
         }
     }

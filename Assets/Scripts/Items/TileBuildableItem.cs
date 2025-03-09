@@ -18,6 +18,7 @@ public class TileBuildableItem : PlacableItem
     {
         Tile = tile;
         SpriteRend.sprite = Tile.Art;
+        Name = tile.Name;
     }
 
     public override void Holding()

@@ -53,7 +53,7 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         if (ItemAmount?.Item != null && ItemAmount.Item is EquipableItem previousEquipable) previousEquipable.Unequip();
         ItemAmount = itemAmount;
-        if (ItemAmount?.Item != null && ItemAmount.Item is EquipableItem newEquipable) newEquipable.Equip();
+        if (EquipmentSlot && ItemAmount?.Item != null && ItemAmount.Item is EquipableItem newEquipable) newEquipable.Equip();
         UpdateSlotUI();
     }
 

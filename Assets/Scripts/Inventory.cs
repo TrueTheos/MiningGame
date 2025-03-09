@@ -262,6 +262,8 @@ public class Inventory : MonoBehaviour
         Item item = itemAmount.Item;
         int remaining = itemAmount.Amount;
 
+        PickupInfoViewManager.Instance.Pickup(itemAmount);
+
         // First try to stack with existing items
         foreach (var slot in _slotsUI)
         {
