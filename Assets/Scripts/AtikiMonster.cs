@@ -305,7 +305,7 @@ public class AtikiMonster : Monster
         return false;
     }
 
-    public override void OnTakeDamage()
+    public override void OnTakeDamage(DamageSource sourceType)
     {
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, _enrageOtherMonstersRadius, gameObject.layer);
         List<GameObject> monsters = new List<GameObject>();

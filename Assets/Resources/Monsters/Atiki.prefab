@@ -132,6 +132,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efe0eae70f6c0a24b81bd3bebac401f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _art: {fileID: 4320002883129286161}
   _maxHealth: 10
   CurrentHealth: 0
   GridPos: {x: 0, y: 0}

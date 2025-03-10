@@ -133,7 +133,7 @@ public class Spear : ThrowableItem, IWeapon
     {
         float normalizedPower = (_currentThrowPower - _minThrowPower) / (_maxThrowPower - _minThrowPower);
 
-        monster.TakeDamage(Mathf.RoundToInt(Mathf.Lerp(0, Damage, normalizedPower)));
+        monster.TakeDamage(Mathf.RoundToInt(Mathf.Lerp(0, Damage, normalizedPower)), DamageSource.Weapon);
         Destroy(gameObject);
     }
 }

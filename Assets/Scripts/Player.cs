@@ -1,3 +1,5 @@
+using Cinemachine;
+using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,8 +15,9 @@ public class Player : Entity
     public Transform Hand => _playerMovement.Hand;
     public Vector2Int Pos => _playerMovement.Pos;
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         Instance = this;
         _playerMovement = GetComponent<PlayerMovement>();
 
@@ -31,4 +34,8 @@ public class Player : Entity
         Movement.StatModifiers.Remove(modifierId);
     }
 
+    public override void OnTakeDamage(DamageSource sourceType)
+    {
+        Blink();
+    }
 }

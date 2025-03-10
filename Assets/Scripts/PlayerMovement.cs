@@ -226,7 +226,7 @@ public class PlayerMovement : MonoBehaviour
         if (fallDistance > 0 && fallDistance >= _fallDistanceThreshold)
         {
             int calculatedDamage = Mathf.RoundToInt((fallDistance - _fallDistanceThreshold) * _fallDamageMultiplier);
-            Player.Instance.TakeDamage(calculatedDamage);
+            Player.Instance.TakeDamage(calculatedDamage, DamageSource.Fall);
         }
         StopFallingEvent?.Invoke();
     }

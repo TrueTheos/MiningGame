@@ -53,8 +53,9 @@ public abstract class Monster : Entity, IChunkObject
         }
     }
 
-    protected virtual void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         UpdatePosition();
         _rb = GetComponent<Rigidbody2D>();
         CurrentHealth = _maxHealth;
