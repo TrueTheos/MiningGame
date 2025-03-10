@@ -17,6 +17,8 @@ public class Player : Entity
     {
         Instance = this;
         _playerMovement = GetComponent<PlayerMovement>();
+
+        CurrentHealth = _maxHealth;
     }
 
     public void AddModifier(StatModifier modifier)

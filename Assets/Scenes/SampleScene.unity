@@ -10328,7 +10328,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.03773582, g: 0.03773582, b: 0.03773582, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -10353,7 +10353,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 11.25
+  orthographic size: 7.5
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -10582,7 +10582,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &652461490
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10708,6 +10708,12 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4096
   OnWorldReady:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBlockPlace:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBlockBreak:
     m_PersistentCalls:
       m_Calls: []
   Ready: 0
@@ -11258,6 +11264,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1174165915}
+  - component: {fileID: 1174165918}
   - component: {fileID: 1174165914}
   - component: {fileID: 1174165916}
   - component: {fileID: 1174165913}
@@ -11354,15 +11361,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2256458091f989d48b5175fa4cc2092f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxHealth: 0
-  CurrentHealth: 0
   _speed: 7
   _jumpingPower: 22.5
   _climbSpeed: 8
   _webSlowdownFactor: 0.5
   _jumpBufferTime: 0.2
   _coyoteTime: 0.1
-  _footstepDistanceThreshold: 10
+  _fallDistanceThreshold: 6
+  _fallDamageMultiplier: 8
   _attractionRadius: 2
   _maxPickupSpeed: 5
   _pickupableLayer:
@@ -11446,6 +11452,20 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1174165911}
   m_Enabled: 1
+--- !u!114 &1174165918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1174165911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab7494204b13b0549a8d3dabe25ca66a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _maxHealth: 100
+  CurrentHealth: 0
 --- !u!1 &1217471448
 GameObject:
   m_ObjectHideFlags: 0

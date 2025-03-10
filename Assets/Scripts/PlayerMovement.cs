@@ -23,7 +23,7 @@ public struct StatModifier
     }
 }
 
-public class PlayerMovement : Entity
+public class PlayerMovement : MonoBehaviour
 {
     public int X { get; private set; }
     public int Y { get; private set; }
@@ -33,13 +33,16 @@ public class PlayerMovement : Entity
     public int ChunkX => Mathf.FloorToInt(X / WorldManager.CHUNK_SIZE);
     public int ChunkY => Mathf.FloorToInt(Y / WorldManager.CHUNK_SIZE);
 
+    [Header("Settings")]
     [SerializeField] private float _speed;
     [SerializeField] private float _jumpingPower;
     [SerializeField] private float _climbSpeed;
     [SerializeField] private float _webSlowdownFactor;
-    [SerializeField] private float _jumpBufferTime = 0.2f;
-    [SerializeField] private float _coyoteTime = 0.1f;
-    [SerializeField] private float _footstepDistanceThreshold = 1.0f;
+    [SerializeField] private float _jumpBufferTime;
+    [SerializeField] private float _coyoteTime;
+    [SerializeField] private float _fallDistanceThreshold;
+    [SerializeField] private float _fallDamageMultiplier;
+    //[SerializeField] private float _footstepDistanceThreshold = 1.0f;
 
     [Header("Attraction Settings")]
     [Tooltip("The radius within which pickups are attracted to the player.")]
@@ -88,6 +91,7 @@ public class PlayerMovement : Entity
     private float _jumpBufferCounter;
     private float _originalGravityScale;
     private Vector3 _lastFootstepPosition;
+    private float _fallStartY;
 
     private void Awake()
     {
@@ -160,8 +164,8 @@ public class PlayerMovement : Entity
         _horizontal = Input.GetAxisRaw("Horizontal");
         _vertical = Input.GetAxisRaw("Vertical");
 
-        if (IsFalling && !_wasFalling) StartFallingEvent?.Invoke();
-        else if(!IsFalling && _wasFalling) StopFallingEvent?.Invoke();
+        if (IsFalling && !_wasFalling) StartFalling();
+        else if (!IsFalling && _wasFalling) StopFalling();
         _wasFalling = IsFalling;
 
         _rb.gravityScale = _currentGravity;
@@ -206,12 +210,30 @@ public class PlayerMovement : Entity
         }
 
         Flip();
-        UpdateFootsteps();
+        //UpdateFootsteps();
+    }
+
+    private void StartFalling()
+    {
+        _fallStartY = transform.position.y;
+        StartFallingEvent?.Invoke();
+    }
+
+    private void StopFalling()
+    {
+        float fallDistance = _fallStartY - transform.position.y;
+
+        if (fallDistance > 0 && fallDistance >= _fallDistanceThreshold)
+        {
+            int calculatedDamage = Mathf.RoundToInt((fallDistance - _fallDistanceThreshold) * _fallDamageMultiplier);
+            Player.Instance.TakeDamage(calculatedDamage);
+        }
+        StopFallingEvent?.Invoke();
     }
 
     private void UpdateFootsteps()
     {
-        float distanceTraveled = Vector3.Distance(transform.position, _lastFootstepPosition);
+        /*float distanceTraveled = Vector3.Distance(transform.position, _lastFootstepPosition);
 
         if (distanceTraveled >= _footstepDistanceThreshold)
         {
@@ -225,7 +247,7 @@ public class PlayerMovement : Entity
                 }
                 _lastFootstepPosition = transform.position;
             }
-        }
+        }*/
     }
 
     private void FixedUpdate()
