@@ -59,7 +59,7 @@ public class Spear : ThrowableItem, IWeapon
 
     private float CalculateFallDistance()
     {
-        float normalizedPower = Mathf.InverseLerp(_minThrowPower, _throwPower, _currentThrowPower);
+        float normalizedPower = Mathf.InverseLerp(_minThrowPower, _maxThrowPower, _currentThrowPower);
         return Mathf.Lerp(0f, _maxFallDistance, normalizedPower);
     }
 
@@ -90,14 +90,14 @@ public class Spear : ThrowableItem, IWeapon
 
         _hand.right = direction;
 
-        if (_currentThrowPower < _throwPower)
+        if (_currentThrowPower < _maxThrowPower)
         {
-            if (_currentThrowPower < _throwPower)
+            if (_currentThrowPower < _maxThrowPower)
             {
-                _currentThrowPower = Mathf.Min(_currentThrowPower + _throwChargeSpeed * Time.deltaTime, _throwPower);
+                _currentThrowPower = Mathf.Min(_currentThrowPower + _throwChargeSpeed * Time.deltaTime, _maxThrowPower);
             }
 
-            if(_currentThrowPower ==  _throwPower)
+            if(_currentThrowPower ==  _maxThrowPower)
             {
                 _thrownVer.GetComponentInChildren<SpriteRenderer>().Blink();
             }
@@ -131,6 +131,9 @@ public class Spear : ThrowableItem, IWeapon
 
     private void HitMonster(Monster monster)
     {
-        // Implement monster hit logic
+        float normalizedPower = (_currentThrowPower - _minThrowPower) / (_maxThrowPower - _minThrowPower);
+
+        monster.TakeDamage(Mathf.RoundToInt(Mathf.Lerp(0, Damage, normalizedPower)));
+        Destroy(gameObject);
     }
 }

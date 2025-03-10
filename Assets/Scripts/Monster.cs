@@ -20,7 +20,7 @@ public abstract class Monster : Entity, IChunkObject
     public int GridX => GridPos.x;
     public int GridY => GridPos.y;
 
-    protected PlayerMovement _player;
+    protected Player _player;
     protected Rigidbody2D _rb;
 
     protected bool _isFacingRight = true;
@@ -34,7 +34,7 @@ public abstract class Monster : Entity, IChunkObject
     protected Dictionary<Vector2Int, PathNode> _edges = new();
     protected float _pathRecalcCooldown = 0.5f;
     protected float _lastPathCalcTime = 0f;
-    protected Vector2Int _currentTargetPos;
+    protected Vector2Int _currentTargetPos = Vector2Int.zero;
     public Queue<PathNode> CurrentPath { get; protected set; }
     public PathNode CurrentTargetNode { get; protected set; }
     public int CurrentPathIndex { get; protected set; }
@@ -62,7 +62,7 @@ public abstract class Monster : Entity, IChunkObject
 
     protected virtual void Start()
     {
-        _player = PlayerMovement.Instance;
+        _player = Player.Instance;
     }
 
     protected void UpdatePosition()
@@ -143,6 +143,7 @@ public abstract class Monster : Entity, IChunkObject
 
     public bool FindPath()
     {
+        if (_currentTargetPos == Vector2.zero) return false;
         PathNode startNode = _nodes.ContainsKey(GridPos) ? _nodes[GridPos] : GetClosestNode(GridPos);
 
         Vector2Int targetPosInt = _currentTargetPos;

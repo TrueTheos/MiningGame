@@ -6,7 +6,7 @@ public abstract class Item : MonoBehaviour
     public string Name;
     public SpriteRenderer SpriteRend;
 
-    protected Transform _hand => PlayerMovement.Instance.Hand;
+    protected Transform _hand => Player.Instance.Hand;
 
     public void OnEnable()
     {

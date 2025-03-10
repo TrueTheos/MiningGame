@@ -32,6 +32,8 @@ public class WorldManager : MonoBehaviour
     [SerializeField] private LayerMask _hideOutsideRenderDstanceMask;
 
     public UnityEvent OnWorldReady;
+    public UnityEvent OnBlockPlace;
+    public UnityEvent OnBlockBreak;
 
     public const int CHUNK_SIZE = 32;
     public readonly int RENDER_DISTANCE_CHUNKS = 1; //in each direction
@@ -53,7 +55,7 @@ public class WorldManager : MonoBehaviour
     private GameObject _randomParent;
 
     private ChunkManager _chunkManager;
-    private PlayerMovement _player;
+    private Player _player;
 
     private HashSet<GameObject> _objectsInRenderDistance = new();
 
@@ -76,7 +78,7 @@ public class WorldManager : MonoBehaviour
         _randomParent = new GameObject("Random");
         _randomParent.transform.SetParent(transform);
 
-        _player = PlayerMovement.Instance;
+        _player = Player.Instance;
         _chunkManager = ChunkManager.Instance;
 
         StartCoroutine(InitWorld());        

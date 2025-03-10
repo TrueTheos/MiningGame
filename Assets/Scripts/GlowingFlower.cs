@@ -47,7 +47,7 @@ public class GlowingFlower : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         if (!_drawGizmos) return;
 

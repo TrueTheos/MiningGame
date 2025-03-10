@@ -1,6 +1,7 @@
 ﻿using DG.Tweening;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 
 public class AtikiMonster : Monster
@@ -47,6 +48,8 @@ public class AtikiMonster : Monster
     public override MonsterType Type => MonsterType.Atiki;
     #endregion
 
+    private bool _isGrounded;
+
     private Vector2 _targetJumpPosition;
 
     protected override void Awake()
@@ -70,11 +73,15 @@ public class AtikiMonster : Monster
         _currentWanderCooldown = _wanderChangeTargetCooldown.Random();
         CalculateGraph();
 
+        _worldManager.OnBlockPlace.AddListener(CalculateGraph);
+        _worldManager.OnBlockBreak.AddListener(CalculateGraph);
+
         ChangeState(_idleState);
     }
 
     public void Enrage()
     {
+        if (Enraged) return;
         Enraged = true;
         ChangeState(_enragedState);
     }
@@ -83,6 +90,19 @@ public class AtikiMonster : Monster
     {
         UpdatePosition();
         _isPlayerVisible = CheckTargetVisibility();
+
+        if (IsGrounded())
+        { 
+            if(!_isGrounded)
+            {
+                FindPath();
+            }
+            _isGrounded = true;
+        }
+        else
+        {
+            _isGrounded = false;
+        }
 
         if (_currentState != null)
         {
@@ -298,6 +318,8 @@ public class AtikiMonster : Monster
             }
         }
 
+        Enrage();
+
         foreach (var monster in monsters)
         {
             if (monster.TryGetComponent<AtikiMonster>(out AtikiMonster atiki))
@@ -327,11 +349,32 @@ public class AtikiMonster : Monster
 
     public void HandleWalking(Vector2 targetPosition)
     {
+        float distanceToTarget = Mathf.Abs(targetPosition.x + 0.5f - transform.position.x);
         float direction = Mathf.Sign(targetPosition.x + 0.5f - transform.position.x);
-        if (Mathf.Abs(targetPosition.x + 0.5f - transform.position.x) > 0.1f)
+
+        if (!_isGrounded && (direction > 0) != (_rb.velocity.x > 0)) return;
+
+        if (distanceToTarget > 0.1f)
         {
-            _rb.velocity = new Vector2(direction * _moveSpeed, _rb.velocity.y);
+            // Slow down as we get closer to target
+            float speedMultiplier = Mathf.Min(1.0f, distanceToTarget / 0.5f);
+            _rb.velocity = new Vector2(direction * _moveSpeed * speedMultiplier, _rb.velocity.y);
         }
+        else
+        {
+            // Stop horizontal movement when very close
+            _rb.velocity = new Vector2(0, _rb.velocity.y);
+        }
+    }
+
+    public void HandleFalling(Vector2 targetPosition)
+    {
+        float distanceToTarget = Mathf.Abs(targetPosition.x + 0.5f - transform.position.x);
+        float direction = Mathf.Sign(targetPosition.x + 0.5f - transform.position.x);
+
+        if(!_isGrounded && (direction > 0) != (_rb.velocity.x > 0)) return;
+
+        _rb.velocity = new Vector2(direction * _moveSpeed, _rb.velocity.y);
     }
 
     public override void PerformJump(Vector2 targetPosition)
@@ -400,7 +443,7 @@ public class AtikiMonster : Monster
         return new List<Vector2Int>();
     }
 
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {      
         if (CurrentPath != null && CurrentPath.Count > 0)
         {

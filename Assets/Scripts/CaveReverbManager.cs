@@ -95,7 +95,7 @@ public class CaveReverbManager : MonoBehaviour
 
     private void Start()
     {
-        playerTransform = PlayerMovement.Instance.transform;
+        playerTransform = Player.Instance.transform;
         StartCoroutine(UpdateReverbRoutine());
     }
 

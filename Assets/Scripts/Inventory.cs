@@ -53,7 +53,7 @@ public class Inventory : MonoBehaviour
 
     private void Start()
     {
-        _player = PlayerMovement.Instance.gameObject;
+        _player = Player.Instance.gameObject;
         InitializeInventory();
     }
 

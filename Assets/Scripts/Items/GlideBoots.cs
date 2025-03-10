@@ -10,20 +10,20 @@ public class GlideBoots : EquipableItem
     public override void Unequip()
     {
         base.Unequip();
-        _playerMovement.RemoveModifier(_fallingGravityModifier.ID);
+        _player.RemoveModifier(_fallingGravityModifier.ID);
         _particleSystem.Stop();
     }
 
     protected override void _Tick()
     {
-        if (_playerMovement.IsFalling && Input.GetKey(KeyCode.Space))
+        if (_player.Movement.IsFalling && Input.GetKey(KeyCode.Space))
         {
-            _playerMovement.AddModifier(_fallingGravityModifier);
+            _player.AddModifier(_fallingGravityModifier);
             _particleSystem.Play();
         }
         else
         {
-            _playerMovement.RemoveModifier(_fallingGravityModifier.ID);
+            _player.RemoveModifier(_fallingGravityModifier.ID);
             _particleSystem.Stop();
         }
     }

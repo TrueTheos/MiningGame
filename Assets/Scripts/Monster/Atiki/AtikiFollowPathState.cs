@@ -120,8 +120,11 @@ public class AtikiFollowPathState : MonsterFollowingPathState
         switch (connection.ConnType)
         {
             case PathNode.ConnectionType.WALK:
-            case PathNode.ConnectionType.FALL:
                 _atiki.HandleWalking(targetPosition);
+                monster.Flip();
+                break;
+            case PathNode.ConnectionType.FALL:
+                _atiki.HandleFalling(targetPosition);
                 monster.Flip();
                 break;
             case PathNode.ConnectionType.JUMP:

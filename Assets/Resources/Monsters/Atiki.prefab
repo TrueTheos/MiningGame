@@ -134,9 +134,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _maxHealth: 10
   CurrentHealth: 0
-  _moveSpeed: 5
-  _jumpPower: 22
+  GridPos: {x: 0, y: 0}
   _pathNodeReachDistance: 0.1
+  _reachedTarget: 0
+  _moveSpeed: 5
+  _jumpPower: 24
   _groundedCheckDistance: 0.1
   _edgeCheckDistance: 0.5
   _groundLayer:
@@ -149,9 +151,7 @@ MonoBehaviour:
   _enrageOtherMonstersRadius: 10
   _wanderSearchNodeRadius: 7
   _wanderChangeTargetCooldown: {x: 5, y: 10}
-  _state: 0
   _isPlayerVisible: 0
-  _reachedTarget: 0
 --- !u!50 &1686755206888159584
 Rigidbody2D:
   serializedVersion: 4

@@ -25,8 +25,6 @@ public struct StatModifier
 
 public class PlayerMovement : Entity
 {
-    public static PlayerMovement Instance { get; private set; }
-
     public int X { get; private set; }
     public int Y { get; private set; }
 
@@ -93,7 +91,6 @@ public class PlayerMovement : Entity
 
     private void Awake()
     {
-        Instance = this;
         _rb = GetComponent<Rigidbody2D>();
         _originalGravityScale = _rb.gravityScale;
     }

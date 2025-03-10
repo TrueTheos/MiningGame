@@ -184,7 +184,7 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if(!ItemAmount.IsEmpty())
         {
             var item = ItemAmount.Item;
-            item.gameObject.transform.SetParent(PlayerMovement.Instance.transform);
+            item.gameObject.transform.SetParent(Player.Instance.transform);
             item.gameObject.SetActive(false);
         }
 

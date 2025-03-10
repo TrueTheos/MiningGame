@@ -60,11 +60,12 @@ public static class Pathfinder
     {
         PathNode.ConnectionType type = connection.ConnType;
         float distance = Vector2.Distance(startNode.Pos, connection.Target.Pos);
+
         return type switch
         {
             PathNode.ConnectionType.WALK => 1f * distance,
-            PathNode.ConnectionType.FALL => 1f * distance,
-            PathNode.ConnectionType.JUMP => 5f * distance,
+            PathNode.ConnectionType.FALL => 2f * distance,
+            PathNode.ConnectionType.JUMP => 3f * distance,
             _ => 1f * distance,
         };
     }

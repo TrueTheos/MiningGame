@@ -10,7 +10,7 @@ public class ChunkManager : MonoBehaviour
     public static ChunkManager Instance;
 
     private WorldManager _worldManager;
-    private PlayerMovement _player;
+    private Player _player;
 
     private Chunk[,] _chunks;
     private HashSet<Chunk> _visibleChunks = new HashSet<Chunk>();
@@ -26,7 +26,7 @@ public class ChunkManager : MonoBehaviour
     private void Start()
     {
         _worldManager = WorldManager.Instance;
-        _player = PlayerMovement.Instance;
+        _player = Player.Instance;
         _chunkSize = WorldManager.CHUNK_SIZE;
 
         int numChunksX = Mathf.CeilToInt((float)_worldManager.WorldWidth / _chunkSize);
@@ -81,10 +81,6 @@ public class ChunkManager : MonoBehaviour
             if (mono != null)
             {
                 mono.gameObject.SetActive(_visibleChunks.Contains(currentChunk));
-            }
-            else
-            {
-                Debug.LogError("NOT EVEN CALLED?");
             }
         }
     }
@@ -217,6 +213,7 @@ public class Chunk : MonoBehaviour
         {
             ChunkObjects.Add(obj);
             MonoBehaviour mb = obj as MonoBehaviour;
+            if (mb == null) return;
             mb.transform.SetParent(transform);
             if (mb != null)
             {

@@ -6,11 +6,11 @@ public abstract class EquipableItem : Item
 {
     public bool Equipped { get; private set; }
 
-    protected PlayerMovement _playerMovement;
+    protected Player _player;
 
     public virtual void Equip()
     {
-        _playerMovement = PlayerMovement.Instance;
+        _player = Player.Instance;
         gameObject.SetActive(true);
         Equipped = true;
     }

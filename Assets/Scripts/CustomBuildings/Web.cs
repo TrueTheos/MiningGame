@@ -13,7 +13,7 @@ public class Web : CustomBuilding
     {
         if(collision.gameObject.CompareTag("Player"))
         {
-            PlayerMovement.Instance.InWeb = true;
+            Player.Instance.Movement.InWeb = true;
         }
     }
 
@@ -21,7 +21,7 @@ public class Web : CustomBuilding
     {
         if (collision.gameObject.CompareTag("Player"))
         {
-            PlayerMovement.Instance.InWeb = false;
+            Player.Instance.Movement.InWeb = false;
         }
     }
 }

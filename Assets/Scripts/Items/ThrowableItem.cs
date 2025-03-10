@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ThrowableItem : Item
 {
-    [SerializeField] protected float _throwPower;
+    [SerializeField] protected float _maxThrowPower;
 
     [HideInInspector] public bool IsThrown;
 
@@ -21,14 +21,16 @@ public class ThrowableItem : Item
 
     public override void UseOnce()
     {
-        Throw(_throwPower);
+        Throw(_maxThrowPower);
     }
 
     protected void Throw(float power)
     {
         if (transform.parent == null) return;
 
-        var thrown = Instantiate(gameObject, PlayerMovement.Instance.transform.position, Quaternion.identity);
+        var playerPos = Player.Instance.transform.position;
+
+        var thrown = Instantiate(gameObject, playerPos, Quaternion.identity);
         thrown.transform.SetParent(null);
         Rigidbody2D rb = thrown.GetComponent<Rigidbody2D>();
         rb.bodyType = RigidbodyType2D.Dynamic;
@@ -39,9 +41,9 @@ public class ThrowableItem : Item
 
         if (rb != null)
         {
-            thrown.transform.position = PlayerMovement.Instance.transform.position;
+            thrown.transform.position = playerPos;
             Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            Vector2 throwDirection = (mousePos - (Vector2)PlayerMovement.Instance.transform.position).normalized;
+            Vector2 throwDirection = (mousePos - (Vector2)playerPos).normalized;
 
             thrown.GetComponent<ThrowableItem>().IsThrown = true;
 
