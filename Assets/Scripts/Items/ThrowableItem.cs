@@ -21,6 +21,7 @@ public class ThrowableItem : Item
 
     public override void UseOnce()
     {
+        base.UseOnce();
         Throw(_maxThrowPower);
     }
 

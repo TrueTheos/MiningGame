@@ -141,7 +141,7 @@ public class Inventory : MonoBehaviour
         {
             if (Input.GetMouseButtonDown(0))
             {
-                CurrentItem?.UseOnce();
+                StartUsingItem();
             }
             if (Input.GetMouseButton(0))
             {
@@ -149,9 +149,19 @@ public class Inventory : MonoBehaviour
             }
             if (Input.GetMouseButtonUp(0))
             {
-                CurrentItem?.EndUse();
+                EndUsingItem();
             }
         }
+    }
+
+    public void StartUsingItem()
+    {
+        CurrentItem?.UseOnce();
+    }
+
+    public void EndUsingItem()
+    {
+        CurrentItem?.EndUse();
     }
 
     public bool RemoveItems(List<ItemAmount> requirements)

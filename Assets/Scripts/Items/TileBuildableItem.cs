@@ -23,6 +23,7 @@ public class TileBuildableItem : PlacableItem
 
     public override void Holding()
     {
+        base.Holding();
         var pos = MousePosToTilePos();
         if(WorldManager.Instance.TryPlaceTile(pos.x, pos.y, this))
         {

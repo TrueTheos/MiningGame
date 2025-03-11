@@ -9,6 +9,7 @@ public class CustomBuilding : PlacableItem
 
     public override void Holding()
     {
+        base.Holding();
         var pos = MousePosToTilePos();
         bool result = WorldManager.Instance.TryPlace(pos.x, pos.y, this);
 

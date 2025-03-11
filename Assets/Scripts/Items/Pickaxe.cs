@@ -12,6 +12,8 @@ public class Pickaxe : Item
 
     private bool _isHolding = false;
 
+    [HideInInspector] public Vector2Int OverridePos = Vector2Int.zero;
+
     private void Awake()
     {
         _anim = GetComponent<Animator>();
@@ -20,13 +22,24 @@ public class Pickaxe : Item
     [System.Obsolete]
     public void Hit()
     {
-        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector2Int mousePosition2D = new Vector2Int(Mathf.RoundToInt(mousePos.x - .5f), Mathf.RoundToInt(mousePos.y - .5f));
-        WorldManager.Instance.Hit(mousePosition2D, _power);
+        if (!_isHolding) return;
+        if (OverridePos != Vector2Int.zero)
+        {
+            WorldManager.Instance.Hit(OverridePos, _power);
+            OverridePos = Vector2Int.zero;
+        }
+        else
+        {
+            Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            Vector2Int mousePosition2D = new Vector2Int(Mathf.RoundToInt(mousePos.x - .5f), Mathf.RoundToInt(mousePos.y - .5f));
+            WorldManager.Instance.Hit(mousePosition2D, _power);
+        }
     }
 
     public override void UseOnce()
     {
+        base.UseOnce();
+        if (_isHolding) return;
         _isHolding = true;
         _anim.SetBool("Mining", true);
         StartCoroutine(Mining());
@@ -34,8 +47,10 @@ public class Pickaxe : Item
 
     public override void EndUse()
     {
+        base.EndUse();
         _isHolding = false;
         _anim.SetBool("Mining", false);
+        OverridePos = Vector2Int.zero;
     }
 
     private IEnumerator Mining()

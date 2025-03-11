@@ -71,6 +71,7 @@ public class Spear : ThrowableItem, IWeapon
 
     public override void UseOnce()
     {
+        base.UseOnce();
         _inHandVer.SetActive(false);
         _thrownVer.SetActive(true);
         _currentThrowPower = _minThrowPower;
@@ -78,6 +79,7 @@ public class Spear : ThrowableItem, IWeapon
 
     public override void Holding()
     {
+        base.Holding();
         Vector2 handPos = _hand.position;
         Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector2 direction = mousePos - handPos;

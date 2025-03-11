@@ -92,9 +92,11 @@ public class PlayerMovement : MonoBehaviour
     private float _originalGravityScale;
     private Vector3 _lastFootstepPosition;
     private float _fallStartY;
+    private Inventory _inventory;
 
     private void Awake()
     {
+        _inventory = GetComponent<Inventory>();
         _rb = GetComponent<Rigidbody2D>();
         _originalGravityScale = _rb.gravityScale;
     }
@@ -210,7 +212,50 @@ public class PlayerMovement : MonoBehaviour
         }
 
         Flip();
+        TryMine();
         //UpdateFootsteps();
+    }
+
+    private bool _mining;
+
+    private void TryMine()
+    {
+        if(_inventory.CurrentItem is Pickaxe pickaxe)
+        {
+            if (_horizontal != 0 || _vertical != 0)
+            {
+                Vector2 direction = new Vector2(_horizontal, _vertical).normalized;
+
+                float adjustedRayDistance = .3f;
+
+                if (Mathf.Abs(_horizontal) < 0.1f && Mathf.Abs(_vertical) > 0.1f)
+                {
+                    adjustedRayDistance = .3f * 2;
+                }
+
+                RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, adjustedRayDistance, Layers.GROUND_LAYER);
+
+                if (hit.collider != null)
+                {
+                    _mining = true;
+                    int xOffset = direction.x > 0 ? 1 : (direction.x < 0 ? -1 : 0);
+                    int yOffset = direction.y > 0 ? 1 : (direction.y < 0 ? -1 : 0);
+                    Vector2Int gridOffset = new Vector2Int(xOffset, yOffset);
+                    pickaxe.OverridePos = Pos + gridOffset;
+                    _inventory.StartUsingItem();
+                    return;
+                }
+            }
+        }
+
+        if (_mining)
+        {
+            _mining = false;
+            if (_inventory.CurrentItem is Pickaxe)
+            { 
+                _inventory.EndUsingItem();
+            }
+        }
     }
 
     private void StartFalling()

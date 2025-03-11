@@ -33,6 +33,11 @@ public static class Extensions
         return new Vector3(vector.x + offset, vector.y + offset, z);
     }
 
+    public static Vector2Int ToGridPos(this Vector3 vector)
+    {
+        return new Vector2Int(Mathf.RoundToInt(vector.x - .5f), Mathf.RoundToInt(vector.y - .5f));
+    }
+
     public static bool RandTest(this int val)
     {
         return UnityEngine.Random.Range(0, val + 1) < val;
