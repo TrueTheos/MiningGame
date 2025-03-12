@@ -220,7 +220,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void TryMine()
     {
-        if(_inventory.CurrentItem is Pickaxe pickaxe)
+        if(_inventory.CurrentItem is Pickaxe pickaxe && _rb.velocity.magnitude < .1f)
         {
             if (_horizontal != 0 || _vertical != 0)
             {

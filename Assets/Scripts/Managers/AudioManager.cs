@@ -18,6 +18,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private SFX _pickupClip;
     [SerializeField] private SFX _placeClip;
     [SerializeField] private SFX _spearThrow;
+    [SerializeField] private SFX _fallDamage;
 
     private AudioSource _source;
 
@@ -42,6 +43,7 @@ public class AudioManager : MonoBehaviour
     public void PlayPickup() => Play(_pickupClip);
     public void PlayPlace() => Play(_placeClip);
     public void PlaySpearThrow() => Play(_spearThrow);
+    public void PlayFallDamage() => Play(_fallDamage);
 
     public void Play(AudioClip clip)
     {

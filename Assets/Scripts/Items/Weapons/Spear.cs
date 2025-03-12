@@ -71,7 +71,6 @@ public class Spear : ThrowableItem, IWeapon
 
     public override void UseOnce()
     {
-        base.UseOnce();
         _inHandVer.SetActive(false);
         _thrownVer.SetActive(true);
         _currentThrowPower = _minThrowPower;
@@ -126,8 +125,18 @@ public class Spear : ThrowableItem, IWeapon
         else if (collision.gameObject.layer.InMask(Layers.GROUND_LAYER))
         {
             _rb.bodyType = RigidbodyType2D.Static;
-            _collider.enabled = false;
+            _collider.isTrigger = true;
             transform.rotation = rotationOnHit;
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag == "Player")
+        {
+            Inventory.Instance.AddItem(new ItemAmount(this, 1));
+            AudioManager.Instance.PlayPickup();
+            Destroy(gameObject);
         }
     }
 

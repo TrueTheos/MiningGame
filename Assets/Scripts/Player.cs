@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class Player : Entity
 {
@@ -36,6 +37,12 @@ public class Player : Entity
 
     public override void OnTakeDamage(DamageSource sourceType)
     {
+        if (sourceType == DamageSource.Fall)
+        {
+            List<float> forces = new() { -.2f, .2f};
+            GetComponent<CinemachineImpulseSource>().GenerateImpulseWithVelocity(new(forces.Random(), forces.Random(), 0));
+            AudioManager.Instance.PlayFallDamage();
+        }
         Blink();
     }
 }
