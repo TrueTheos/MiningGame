@@ -10779,7 +10779,7 @@ MonoBehaviour:
     - Building: {fileID: 8338254676118141024, guid: 12b2da0e67e001e46ae13a00e611a50b, type: 3}
       Chance: 0.05
     - Building: {fileID: 4633966484930652933, guid: eb51642488af55b45947e08b044b97ec, type: 3}
-      Chance: 0.05
+      Chance: 0.5
     nodeCount: 5
     initialSpreadRadius: 50
     spreadIterations: 100
@@ -10792,9 +10792,9 @@ MonoBehaviour:
     vineChance: 0.3
   _perlinCaveThreshold: 0.55
   _perlinCaveScale: 0.08
-  _caveSimulationSteps: 6
+  _caveSimulationSteps: 7
   _initialCaveChance: 0.5
-  _birthLimit: 0300000004000000
+  _birthLimit: 030000000400000005000000
   _deathLimit: 3
   _oreSpawnChance: 0.1
   _stoneTile: {fileID: 11400000, guid: b6b97ac716d46194f86eb4aad0872cba, type: 2}

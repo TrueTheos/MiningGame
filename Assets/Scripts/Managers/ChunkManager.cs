@@ -92,7 +92,6 @@ public class ChunkManager : MonoBehaviour
 
         if (!IsChunksInBounds(chunkIndexX, chunkIndexY))
         {
-            Debug.LogError("NULL CHUNK?");
             return null;
         }
         return _chunks[chunkIndexX, chunkIndexY];

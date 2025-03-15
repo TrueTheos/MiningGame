@@ -382,28 +382,40 @@ public class WorldManager : MonoBehaviour
 
     public bool TryPlace(int x, int y, CustomBuilding building)
     {
-        if (!IsTileInBounds(x, y)) return false;
-        if (!building.IsPlacementValid(x, y)) return false;
-        if (!IsEmpty(x, y))
+        List<Vector2Int> posToDestroy = new();
+
+        List<Vector2Int> posToCheck = new(building.RequiredFreeSpaces);
+
+        if (posToCheck.Count == 0) posToCheck.Add(new Vector2Int(0, 0));
+
+        foreach (var req in posToCheck)
         {
-            if (Buildings[x, y] != null && Buildings[x, y].canBeDestroyedToReplace)
+            int newX = x + req.x;
+            int newY = y + req.y;
+
+            if (!IsTileInBounds(newX, newY)) return false;
+            if (!building.IsPlacementValid(newX, newY)) return false;
+            if (!IsEmpty(newX, newY))
             {
-                BreakTile(x, y);
-                PlaceBuilding(x, y, building);
-                AudioManager.Instance.PlayPlace();
-                return true;
-            }
-            else
-            {
-                return false;
+                if (Buildings[newX, newY] != null && Buildings[newX, newY].canBeDestroyedToReplace)
+                {
+                    posToDestroy.Add(new(newX, newY));
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
-        else
+
+        foreach (var pos in posToDestroy)
         {
-            PlaceBuilding(x, y, building);
-            AudioManager.Instance.PlayPlace();
-            return true;
+            BreakTile(pos.x, pos.y);
         }
+
+        PlaceBuilding(x, y, building);
+        if(Ready) AudioManager.Instance.PlayPlace();
+        return true;
     }
 
     public bool TryPlaceTile(int x, int y, TileBuildableItem tile)

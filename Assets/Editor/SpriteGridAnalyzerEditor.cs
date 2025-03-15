@@ -6,16 +6,16 @@ using UnityEngine;
 
 public class SpriteGridAnalyzerEditor : EditorWindow
 {
-    private Texture2D sourceTexture;
-    private Sprite sourceSprite;
-    private Vector2Int gridSize = new Vector2Int(5, 7);
-    private Vector2Int originPosition = new Vector2Int(2, 0);
-    private float coverageThreshold = 0.3f;
-    private List<Vector2Int> coveredCells = new List<Vector2Int>();
-    private bool showGridOverlay = true;
-    private bool analyzeCompleted = false;
-    private Vector2 scrollPosition;
-    private Vector2 resultScrollPosition;
+    private Texture2D _sourceTexture;
+    private Sprite _sourceSprite;
+    private Vector2Int _gridSize = new();
+    private Vector2Int _originPosition = new();
+    private float _coverageThreshold = 0.3f;
+    private List<Vector2Int> _coveredCells = new List<Vector2Int>();
+    private bool _showGridOverlay = true;
+    private bool _analyzeCompleted = false;
+    private Vector2 _scrollPosition;
+    private Vector2 _resultScrollPosition;
 
     [MenuItem("Tools/Sprite Grid Analyzer")]
     public static void ShowWindow()
@@ -25,26 +25,32 @@ public class SpriteGridAnalyzerEditor : EditorWindow
 
     private void OnGUI()
     {
-        scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+        _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
 
         EditorGUILayout.LabelField("Sprite Grid Analyzer", EditorStyles.boldLabel);
         EditorGUILayout.Space();
 
         EditorGUILayout.LabelField("Source Image", EditorStyles.boldLabel);
-        sourceTexture = (Texture2D)EditorGUILayout.ObjectField("Texture", sourceTexture, typeof(Texture2D), false);
-        sourceSprite = (Sprite)EditorGUILayout.ObjectField("Sprite", sourceSprite, typeof(Sprite), false);
+        _sourceTexture = (Texture2D)EditorGUILayout.ObjectField("Texture", _sourceTexture, typeof(Texture2D), false);
+        _sourceSprite = (Sprite)EditorGUILayout.ObjectField("Sprite", _sourceSprite, typeof(Sprite), false);
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Grid Settings", EditorStyles.boldLabel);
-        gridSize = EditorGUILayout.Vector2IntField("Grid Size (W, H)", gridSize);
-        originPosition = EditorGUILayout.Vector2IntField("Origin Position (X, Y)", originPosition);
-        coverageThreshold = EditorGUILayout.Slider("Coverage Threshold", coverageThreshold, 0.01f, 1f);
-        showGridOverlay = EditorGUILayout.Toggle("Show Grid Overlay", showGridOverlay);
+        EditorGUI.BeginChangeCheck();
+        _gridSize = EditorGUILayout.Vector2IntField("Grid Size (W, H)", _gridSize);
+        _originPosition = EditorGUILayout.Vector2IntField("Origin Position (X, Y)", _originPosition);
+        _coverageThreshold = EditorGUILayout.Slider("Coverage Threshold", _coverageThreshold, 0.01f, 1f);
+        _showGridOverlay = EditorGUILayout.Toggle("Show Grid Overlay", _showGridOverlay);
         
-        gridSize.x = Mathf.Max(1, gridSize.x);
-        gridSize.y = Mathf.Max(1, gridSize.y);
-        originPosition.x = Mathf.Clamp(originPosition.x, 0, gridSize.x - 1);
-        originPosition.y = Mathf.Clamp(originPosition.y, 0, gridSize.y - 1);
+        _gridSize.x = Mathf.Max(1, _gridSize.x);
+        _gridSize.y = Mathf.Max(1, _gridSize.y);
+        _originPosition.x = Mathf.Clamp(_originPosition.x, 0, _gridSize.x - 1);
+        _originPosition.y = Mathf.Clamp(_originPosition.y, 0, _gridSize.y - 1);
+
+        if (EditorGUI.EndChangeCheck())
+        {
+            AnalyzeImage();
+        }
 
         EditorGUILayout.Space();
         if (GUILayout.Button("Analyze Image"))
@@ -52,15 +58,15 @@ public class SpriteGridAnalyzerEditor : EditorWindow
             AnalyzeImage();
         }
 
-        if (analyzeCompleted)
+        if (_analyzeCompleted)
         {
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Results", EditorStyles.boldLabel);
 
             // Display image with grid overlay
-            if ((sourceTexture != null || sourceSprite != null) && showGridOverlay)
+            if ((_sourceTexture != null || _sourceSprite != null) && _showGridOverlay)
             {
-                Texture2D texture = sourceSprite != null ? sourceSprite.texture : sourceTexture;
+                Texture2D texture = _sourceSprite != null ? _sourceSprite.texture : _sourceTexture;
 
                 Rect availableRect = GUILayoutUtility.GetRect(0, 10000, 0, 10000, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
@@ -89,21 +95,21 @@ public class SpriteGridAnalyzerEditor : EditorWindow
                 Event e = Event.current;
                 if(e.type == EventType.MouseDown && e.button == 0 && rect.Contains(e.mousePosition))
                 {
-                    float cellWidth = rect.width / gridSize.x;
-                    float cellHeight = rect.height / gridSize.y;
+                    float cellWidth = rect.width / _gridSize.x;
+                    float cellHeight = rect.height / _gridSize.y;
 
                     int gridX = (int)((e.mousePosition.x - rect.x) / cellWidth);
                     int gridY = (int)((rect.y + rect.height - e.mousePosition.y) / cellHeight);
 
-                    Vector2Int relativePos = new Vector2Int(gridX - originPosition.x, gridY - originPosition.y);
+                    Vector2Int relativePos = new Vector2Int(gridX - _originPosition.x, gridY - _originPosition.y);
                 
-                    if(coveredCells.Contains(relativePos))
+                    if(_coveredCells.Contains(relativePos))
                     {
-                        coveredCells.Remove(relativePos);
+                        _coveredCells.Remove(relativePos);
                     }
                     else
                     {
-                        coveredCells.Add(relativePos);
+                        _coveredCells.Add(relativePos);
                     }
 
                     Repaint();
@@ -115,16 +121,16 @@ public class SpriteGridAnalyzerEditor : EditorWindow
 
             // Display covered cells
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField($"Found {coveredCells.Count} cells with >={coverageThreshold * 100}% coverage");
+            EditorGUILayout.LabelField($"Found {_coveredCells.Count} cells with >={_coverageThreshold * 100}% coverage");
 
-            if (coveredCells.Count > 0)
+            if (_coveredCells.Count > 0)
             {
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine("// List of covered cell positions relative to origin");
                 sb.AppendLine("List<Vector2Int> coveredPositions = new List<Vector2Int>");
                 sb.AppendLine("{");
 
-                foreach (Vector2Int pos in coveredCells)
+                foreach (Vector2Int pos in _coveredCells)
                 {
                     sb.AppendLine($"    new Vector2Int({pos.x}, {pos.y}),");
                 }
@@ -134,7 +140,7 @@ public class SpriteGridAnalyzerEditor : EditorWindow
                 sb.AppendLine();
                 sb.AppendLine("};");
 
-                resultScrollPosition = EditorGUILayout.BeginScrollView(resultScrollPosition, GUILayout.Height(200));
+                _resultScrollPosition = EditorGUILayout.BeginScrollView(_resultScrollPosition, GUILayout.Height(200));
                 EditorGUILayout.TextArea(sb.ToString(), GUILayout.ExpandHeight(true));
                 EditorGUILayout.EndScrollView();
 
@@ -155,12 +161,12 @@ public class SpriteGridAnalyzerEditor : EditorWindow
 
     private string GeneratePastableList()
     {
-        if (coveredCells.Count == 0)
+        if (_coveredCells.Count == 0)
             return "";
 
         StringBuilder sb = new StringBuilder();
 
-        foreach (Vector2Int pos in coveredCells)
+        foreach (Vector2Int pos in _coveredCells)
         {
             sb.AppendLine($"{pos.x}, {pos.y}");
         }
@@ -170,23 +176,23 @@ public class SpriteGridAnalyzerEditor : EditorWindow
 
     private void AnalyzeImage()
     {
-        if (sourceTexture == null && sourceSprite == null)
+        if (_sourceTexture == null && _sourceSprite == null)
         {
             EditorUtility.DisplayDialog("Error", "Please assign a texture or sprite first.", "OK");
             return;
         }
 
-        analyzeCompleted = false;
-        coveredCells.Clear();
+        _analyzeCompleted = false;
+        _coveredCells.Clear();
 
         Texture2D pixelTexture;
-        if (sourceSprite != null)
+        if (_sourceSprite != null)
         {
-            pixelTexture = sourceSprite.texture;
+            pixelTexture = _sourceSprite.texture;
         }
         else
         {
-            pixelTexture = sourceTexture;
+            pixelTexture = _sourceTexture;
         }
 
         if (!pixelTexture.isReadable)
@@ -212,13 +218,13 @@ public class SpriteGridAnalyzerEditor : EditorWindow
         int texWidth = pixelTexture.width;
         int texHeight = pixelTexture.height;
 
-        int cellWidth = texWidth / gridSize.x;
-        int cellHeight = texHeight / gridSize.y;
+        int cellWidth = texWidth / _gridSize.x;
+        int cellHeight = texHeight / _gridSize.y;
 
         // Analyze each cell
-        for (int y = 0; y < gridSize.y; y++)
+        for (int y = 0; y < _gridSize.y; y++)
         {
-            for (int x = 0; x < gridSize.x; x++)
+            for (int x = 0; x < _gridSize.x; x++)
             {
                 int pixelCount = 0;
                 int nonTransparentCount = 0;
@@ -250,36 +256,36 @@ public class SpriteGridAnalyzerEditor : EditorWindow
                 float coverage = pixelCount > 0 ? (float)nonTransparentCount / pixelCount : 0f;
 
                 // If coverage is above threshold, add to list
-                if (coverage >= coverageThreshold)
+                if (coverage >= _coverageThreshold)
                 {
-                    Vector2Int relativePos = new Vector2Int(x - originPosition.x, y - originPosition.y);
-                    coveredCells.Add(relativePos);
+                    Vector2Int relativePos = new Vector2Int(x - _originPosition.x, y - _originPosition.y);
+                    _coveredCells.Add(relativePos);
                 }
             }
         }
 
-        analyzeCompleted = true;
+        _analyzeCompleted = true;
     }
 
     private void DrawGridOverlay(Rect rect)
     {
-        if (sourceTexture == null && sourceSprite == null)
+        if (_sourceTexture == null && _sourceSprite == null)
             return;
 
-        float cellWidth = rect.width / gridSize.x;
-        float cellHeight = rect.height / gridSize.y;
+        float cellWidth = rect.width / _gridSize.x;
+        float cellHeight = rect.height / _gridSize.y;
 
         Handles.color = new Color(0.5f, 0.5f, 1f, 0.5f);
 
         // Draw vertical lines
-        for (int x = 0; x <= gridSize.x; x++)
+        for (int x = 0; x <= _gridSize.x; x++)
         {
             float xPos = rect.x + x * cellWidth;
             Handles.DrawLine(new Vector3(xPos, rect.y), new Vector3(xPos, rect.y + rect.height));
         }
 
         // Draw horizontal lines
-        for (int y = 0; y <= gridSize.y; y++)
+        for (int y = 0; y <= _gridSize.y; y++)
         {
             float yPos = rect.y + y * cellHeight;
             Handles.DrawLine(new Vector3(rect.x, yPos), new Vector3(rect.x + rect.width, yPos));
@@ -287,17 +293,17 @@ public class SpriteGridAnalyzerEditor : EditorWindow
 
         // Draw origin marker
         Handles.color = Color.yellow;
-        float originX = rect.x + originPosition.x * cellWidth + cellWidth / 2;
-        float originY = rect.y + rect.height - originPosition.y * cellHeight - cellHeight / 2;
+        float originX = rect.x + _originPosition.x * cellWidth + cellWidth / 2;
+        float originY = rect.y + rect.height - _originPosition.y * cellHeight - cellHeight / 2;
         Handles.DrawWireDisc(new Vector3(originX, originY), Vector3.forward, 5f);
 
         // Highlight covered cells
-        if (analyzeCompleted)
+        if (_analyzeCompleted)
         {
-            foreach (Vector2Int pos in coveredCells)
+            foreach (Vector2Int pos in _coveredCells)
             {
-                float x = rect.x + (pos.x + originPosition.x) * cellWidth;
-                float y = rect.y + rect.height - (pos.y + originPosition.y + 1) * cellHeight;
+                float x = rect.x + (pos.x + _originPosition.x) * cellWidth;
+                float y = rect.y + rect.height - (pos.y + _originPosition.y + 1) * cellHeight;
 
                 Handles.color = new Color(0f, 1f, 0f, 0.3f);
                 Handles.DrawSolidRectangleWithOutline(

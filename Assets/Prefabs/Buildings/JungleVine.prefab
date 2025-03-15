@@ -145,6 +145,8 @@ MonoBehaviour:
   Pos: {x: 0, y: 0}
   Solid: 0
   Durability: 1
+  _size: {x: 1, y: 1}
+  _requiredFreeSpaces: []
   _art:
   - {fileID: -1952765093, guid: b65a478f207934847ad20e26d27c57b7, type: 3}
   - {fileID: 1320849663, guid: b65a478f207934847ad20e26d27c57b7, type: 3}
