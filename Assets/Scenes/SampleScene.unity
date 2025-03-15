@@ -10357,7 +10357,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 7.5
+  orthographic size: 11.25
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -10777,6 +10777,8 @@ MonoBehaviour:
     baseTile: {fileID: 11400000, guid: 6818f3ce01faf57439709e8a96f3ecae, type: 2}
     decorativeBuildings:
     - Building: {fileID: 8338254676118141024, guid: 12b2da0e67e001e46ae13a00e611a50b, type: 3}
+      Chance: 0.05
+    - Building: {fileID: 4633966484930652933, guid: eb51642488af55b45947e08b044b97ec, type: 3}
       Chance: 0.05
     nodeCount: 5
     initialSpreadRadius: 50

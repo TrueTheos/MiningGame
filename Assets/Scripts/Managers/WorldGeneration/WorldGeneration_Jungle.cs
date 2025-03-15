@@ -57,7 +57,7 @@ namespace Assets.Scripts.Managers.WorldGeneration
             {
                 Vector2Int current = queue.Dequeue();
 
-                if (!biomeTiles.Add(current)) continue; // Already processed
+                if (!biomeTiles.Add(current)) continue;
 
                 foreach (var dir in GetRandomizedDirections())
                 {
@@ -177,15 +177,11 @@ namespace Assets.Scripts.Managers.WorldGeneration
         {
             TileSO currentTile = _worldManager.WorldData[x, y];
 
-            // Only convert stone tiles
             if (currentTile != _stoneTile) return;
 
-            // Replace base tile
             _worldManager.SetTile(x, y, jungleSettings.baseTile, false);
 
-            //todo REWORK THIS THATS STUPID, NEED MORE OPTIMAL WAYS TO CHECK FOR PLACEABLE STUFF,
-            //CONVERTTOJUNGLE IS ONLY CALLED ON JUNGLE WALLS, NOT EMPTY TILES INSIDE IT
-            if(_worldManager.IsEmpty(x,y + 1))
+            if(_worldManager.IsEmpty(x, y + 1))
             {
                 if (jungleSettings.decorativeBuildings != null && jungleSettings.decorativeBuildings.Count > 0)
                 {

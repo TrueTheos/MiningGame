@@ -17,8 +17,8 @@ public class BiomeSettings
     public int nodeCount = 5;
     public int initialSpreadRadius = 50;
     public int spreadIterations = 4;
-    public float spreadChance = 0.55f; // Chance to spread to neighboring tiles
-    public float diagonalSpreadModifier = 0.7f; // Makes diagonal spread less likely
+    public float spreadChance = 0.55f;
+    public float diagonalSpreadModifier = 0.7f;
 }
 
 [Serializable]
@@ -31,7 +31,7 @@ public struct DecorativeBuildingChance
 [System.Serializable]
 public class JungleBiomeSettings : BiomeSettings
 {
-    public Decoration jungleGrassTile; // For surface blocks
+    public Decoration jungleGrassTile;
     public float grassSpawnChance;
     public Decoration vineTile;
     public Vector2Int maxVineLength;
