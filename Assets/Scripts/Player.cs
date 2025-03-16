@@ -16,6 +16,8 @@ public class Player : Entity
     public Transform Hand => _playerMovement.Hand;
     public Vector2Int Pos => _playerMovement.Pos;
 
+    public bool IsFacingRight => _playerMovement.IsFacingRight;
+
     protected override void Awake()
     {
         base.Awake();

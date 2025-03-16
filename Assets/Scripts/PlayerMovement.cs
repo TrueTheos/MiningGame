@@ -86,6 +86,7 @@ public class PlayerMovement : MonoBehaviour
     private float _horizontal;
     private float _vertical;
     private bool _isFacingRight = true;
+    public bool IsFacingRight => _isFacingRight;
     private bool _isJumping;
     private float _coyoteTimeCounter;
     private float _jumpBufferCounter;

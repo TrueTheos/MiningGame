@@ -14,16 +14,22 @@ public class Door : CustomBuilding
     [SerializeField] private SFX _openSound, _closeSound;
 
     private BoxCollider2D _doorCollider;
-    private Transform _playerTransform;
+    private Player _playerTransform;
     private float _closeTimer = 0f;
 
     private void Start()
     {
         _doorCollider = GetComponent<BoxCollider2D>();
-        _playerTransform = Player.Instance.transform;
+        _playerTransform = Player.Instance;
         SpriteRend.sprite = _closedSprite;
         _doorCollider.enabled = true;
         _isOpen = false;
+    }
+
+    public override void OnPlace(int x, int y)
+    {
+        base.OnPlace(x, y);
+        if(!Player.Instance.IsFacingRight) transform.localScale = new Vector3(-1, 1, 1);
     }
 
     private void Update()
@@ -31,7 +37,7 @@ public class Door : CustomBuilding
         if (!_isPlaced) return;
         if (_autoOpenEnabled)
         {
-            float distanceToPlayer = Vector2.Distance(transform.position, _playerTransform.position);
+            float distanceToPlayer = Vector2.Distance(transform.position, _playerTransform.transform.position);
 
             if (!_isOpen && distanceToPlayer <= _autoOpenDistance)
             {
