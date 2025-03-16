@@ -15,6 +15,7 @@ public class LightSourceCustomBuilding : CustomBuilding
 
     public override void OnPlace(int x, int y)
     {
+        base.OnPlace(x,y);
         _light2D.gameObject.SetActive(true);
         LightManager.Instance.AddLight(x, y, Light);
     }

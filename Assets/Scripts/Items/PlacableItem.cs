@@ -27,6 +27,8 @@ public abstract class PlacableItem : Item
 
     [HideInInspector] public Vector2Int Pos;
 
+    protected bool _isPlaced => Pos != Vector2.zero;
+
     public virtual void OnPlace(int x, int y) { }
     public Vector2Int MousePosToTilePos()
     {

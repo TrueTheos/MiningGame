@@ -10357,7 +10357,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 7.5
+  orthographic size: 11.25
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -11512,6 +11512,8 @@ MonoBehaviour:
     Amount: 10
   - Item: {fileID: 3548670867404928372, guid: d290e6d115c4a1b4ca2c838a2a18bfd1, type: 3}
     Amount: 1
+  - Item: {fileID: 431985189366238903, guid: 2ad232dc4285e574a9698e8b4f4aa195, type: 3}
+    Amount: 5
   slotCount: 27
   hotbarLength: 9
   _slotPrefab: {fileID: 3171668138692863855, guid: f6cdff9b2563a9a41a25a81f926a16dd, type: 3}
