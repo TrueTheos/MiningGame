@@ -57,7 +57,7 @@ MonoBehaviour:
   m_DeprecatedPointLightCookieSprite: {fileID: 0}
   m_LightOrder: 0
   m_AlphaBlendOnOverlap: 0
-  m_OverlapOperation: 0
+  m_OverlapOperation: 1
   m_NormalMapDistance: 3
   m_NormalMapQuality: 2
   m_UseNormalMap: 0
@@ -137,6 +137,9 @@ MonoBehaviour:
   Pos: {x: 0, y: 0}
   Solid: 0
   Durability: 1
+  _size: {x: 1, y: 1}
+  _requiredFreeSpaces: []
+  _overrideHitClips: []
   Light:
     LightPower: 1.5
     Color: {r: 1, g: 0.9137255, b: 0.5529412, a: 1}
@@ -213,7 +216,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 5
   m_Sprite: {fileID: 21300000, guid: d1ae408a7cd4ef34fa4c861efecdca59, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

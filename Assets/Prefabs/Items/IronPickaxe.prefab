@@ -51,6 +51,7 @@ MonoBehaviour:
   _power: 1
   _cooldown: 0.3
   _clip: {fileID: 7400000, guid: 12105e80b28c6cf448a223537b115da3, type: 2}
+  OverridePos: {x: 0, y: 0}
 --- !u!95 &2752020557527502551
 Animator:
   serializedVersion: 5
@@ -144,7 +145,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 6
+  m_SortingOrder: 5
   m_Sprite: {fileID: 21300000, guid: 2d830d421a310564781e5896fdfbc6dd, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

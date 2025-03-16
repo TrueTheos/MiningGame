@@ -27,7 +27,6 @@ public class WorldManager : MonoBehaviour
     [SerializeField] private ParticleSystem _destroyTileParticle;
     public ParticleSystem DestroyTileParticle => _destroyTileParticle;
     [SerializeField] private PickupableItem _pickupableItem;
-    [SerializeField] private TileBuildableItem _tileBuildableItem;
     [SerializeField] private LightSourceCustomBuilding _torchPrefab;
     [SerializeField] private LayerMask _hideOutsideRenderDstanceMask;
 
@@ -217,10 +216,10 @@ public class WorldManager : MonoBehaviour
     {
         if (WorldData[pos.x, pos.y] == null && Buildings[pos.x,pos.y] == null) return;
 
-        AudioManager.Instance.PlayMine();
-
         if (WorldData[pos.x, pos.y] != null)
         {
+            AudioManager.Instance.PlayMine();
+
             if (!_durabilityLeft.ContainsKey(pos)) _durabilityLeft[pos] = WorldData[pos.x, pos.y].Durability;
             _durabilityLeft[pos] -= power;
 
@@ -260,24 +259,28 @@ public class WorldManager : MonoBehaviour
         }
         else if(Buildings[pos.x, pos.y] != null)
         {
-            if (!_durabilityLeft.ContainsKey(pos)) _durabilityLeft[pos] = Buildings[pos.x, pos.y].Durability;
+            var building = Buildings[pos.x, pos.y];
+            if (building.HitClips != null && building.HitClips.Count > 0)
+            {
+                AudioManager.Instance.Play(building.HitClips.Random());
+            }
+            else
+            {
+                AudioManager.Instance.PlayMine();
+            }
+
+            if (!_durabilityLeft.ContainsKey(pos)) _durabilityLeft[pos] = building.Durability;
             _durabilityLeft[pos] -= power;
 
-            GameObject building = Buildings[pos.x, pos.y].gameObject;
+            building.PlayHitAnimation();
+        }
+    }
 
-            building.transform.DOScale(new Vector3(.8f, .8f, 1f), 0.05f)
-                .SetEase(Ease.OutQuad)
-                .OnComplete(() => {
-                    building.transform.DOScale(Vector3.one, 0.05f)
-                        .SetEase(Ease.InQuad)
-                        .OnComplete(() => {
-                            if (_durabilityLeft[pos] <= 0)
-                            {
-                                //playsound break
-                                BreakTile(pos.x, pos.y);
-                            }
-                        });
-                });
+    public void OnHitAnimationEnd(int x, int y)
+    {
+        if (_durabilityLeft[new Vector2Int(x, y)] <= 0)
+        {
+            BreakTile(x, y);
         }
     }
 
@@ -312,9 +315,7 @@ public class WorldManager : MonoBehaviour
             particle.Emit(Random.Range(3, 8));
             if (WorldData[x, y].Drop.Item == null && WorldData[x, y].DropItself)
             {
-                var clone = Instantiate(_tileBuildableItem.gameObject);
-                clone.SetActive(false);
-                clone.GetComponent<TileBuildableItem>().Init(WorldData[x, y]);
+                var clone = TileFactory.Instance.SpawnTile(WorldData[x, y]);
                 SpawnPickupable(tilePosition.x + .5f, tilePosition.y + .5f, new ItemAmount(clone.GetComponent<Item>(), 1));
             }
             if (WorldData[x, y].Drop.Item != null)

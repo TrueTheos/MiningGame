@@ -40,7 +40,7 @@ public static class Extensions
 
     public static bool RandTest(this int val)
     {
-        return UnityEngine.Random.Range(0, val + 1) < val;
+        return UnityEngine.Random.Range(0, 100) < val;
     }
 
     public static IEnumerable<Vector2Int> GetNeighbors(this Vector2Int tile)

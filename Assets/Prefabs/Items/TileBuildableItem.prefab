@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95d69d82ad2696c48ac6b7af8e293039, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Name: 
   SpriteRend: {fileID: 94772092804500497}
   allowedPlacements: 1
   destroyWhenSupportDestroyed: 0
@@ -52,6 +53,8 @@ MonoBehaviour:
   drop:
     Item: {fileID: 0}
     Amount: 0
+  canBeDestroyedToReplace: 0
+  ParticleColors: []
   Pos: {x: 0, y: 0}
   Tile: {fileID: 0}
 --- !u!1 &8633184118083168790
@@ -126,7 +129,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 5
   m_Sprite: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

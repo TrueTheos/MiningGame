@@ -1,7 +1,10 @@
+using DG.Tweening;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static AudioManager;
 
 public class CustomBuilding : PlacableItem
 {
@@ -15,6 +18,9 @@ public class CustomBuilding : PlacableItem
     [SerializeField]
     private List<Vector2Int> _requiredFreeSpaces = new List<Vector2Int>();
     public List<Vector2Int> RequiredFreeSpaces => _requiredFreeSpaces;
+
+    [SerializeField] private List<SFX> _overrideHitClips;
+    public List<SFX> HitClips => _overrideHitClips;
 
     public void PastePositions()
     {
@@ -34,6 +40,19 @@ public class CustomBuilding : PlacableItem
         bool result = WorldManager.Instance.TryPlace(pos.x, pos.y, this);
 
         if(result) Inventory.Instance.RemoveOne();
+    }
+
+    public virtual void PlayHitAnimation()
+    {
+        transform.DOScale(new Vector3(.8f, .8f, 1f), 0.05f)
+                .SetEase(Ease.OutQuad)
+                .OnComplete(() => {
+                    transform.DOScale(Vector3.one, 0.05f)
+                        .SetEase(Ease.InQuad)
+                        .OnComplete(() => {
+                            WorldManager.Instance.OnHitAnimationEnd(Pos.x, Pos.y);
+                        });
+                });
     }
 
     private List<Vector2Int> ParsePositions(string text)

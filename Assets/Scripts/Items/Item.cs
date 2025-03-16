@@ -10,7 +10,7 @@ public abstract class Item : MonoBehaviour
 
     public void OnEnable()
     {
-        if(SpriteRend != null) SpriteRend.sortingOrder = 6;
+        //if(SpriteRend != null) SpriteRend.sortingOrder = 6;
     }
 
     public virtual void Holding() { }
