@@ -433,7 +433,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 5
+  m_SortingOrder: 10
   m_Sprite: {fileID: -748692552, guid: 9c8e280b6607bbc42a85c0ab2d36196c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -10744,6 +10744,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   Ready: 0
+  testSpawnPos: {x: 0, y: 0}
+  testTree: {fileID: 0}
 --- !u!4 &713258634
 Transform:
   m_ObjectHideFlags: 0
@@ -10779,7 +10781,7 @@ MonoBehaviour:
     - Building: {fileID: 8338254676118141024, guid: 12b2da0e67e001e46ae13a00e611a50b, type: 3}
       Chance: 0.05
     - Building: {fileID: 4633966484930652933, guid: eb51642488af55b45947e08b044b97ec, type: 3}
-      Chance: 0.5
+      Chance: 0.1
     nodeCount: 5
     initialSpreadRadius: 50
     spreadIterations: 100

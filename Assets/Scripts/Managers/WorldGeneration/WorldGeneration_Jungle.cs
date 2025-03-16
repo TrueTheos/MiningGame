@@ -188,7 +188,7 @@ namespace Assets.Scripts.Managers.WorldGeneration
                     var randomDecoration = jungleSettings.decorativeBuildings.Random();
                     if(randomDecoration.Building != null)
                     {
-                        if (Random.Range(0f, 1f) < randomDecoration.Chance)
+                        if (Random.Range(0f, 1f) <= randomDecoration.Chance)
                         {
                             _worldManager.TryPlace(x, y + 1, randomDecoration.Building);
                         }

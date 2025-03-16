@@ -372,12 +372,30 @@ public class WorldManager : MonoBehaviour
         CustomBuilding newBuilding = Instantiate(building.gameObject, new Vector3(x + .5f, y + .5f, 0), Quaternion.identity).GetComponent<CustomBuilding>();
         newBuilding.transform.SetParent(_buildingsParent.transform);
         Buildings[x, y] = newBuilding;
+
+        foreach (var pos in building.RequiredFreeSpaces)
+        {
+            int newX = x + pos.x;
+            int newY = y + pos.y;
+
+            Buildings[newX, newY] = newBuilding;
+        }
+
         newBuilding.OnPlace(x,y);
         newBuilding.Pos = new Vector2Int(x, y);
         CaveReverbManager.Instance.RecalculateZone(x, y);
 
         UpdatePathNodeAt(x, y);
         UpdatePathNodeAt(x, y + 1);
+    }
+
+    public Vector2Int testSpawnPos;
+    public CustomBuilding testTree;
+
+    [ContextMenu("test spawn")]
+    public void TestSpawn()
+    {
+        TryPlace(testSpawnPos.x, testSpawnPos.y, testTree);
     }
 
     public bool TryPlace(int x, int y, CustomBuilding building)
@@ -394,7 +412,7 @@ public class WorldManager : MonoBehaviour
             int newY = y + req.y;
 
             if (!IsTileInBounds(newX, newY)) return false;
-            if (!building.IsPlacementValid(newX, newY)) return false;
+            if (newX == x && newY == y && !building.IsPlacementValid(newX, newY)) return false;
             if (!IsEmpty(newX, newY))
             {
                 if (Buildings[newX, newY] != null && Buildings[newX, newY].canBeDestroyedToReplace)

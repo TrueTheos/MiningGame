@@ -23,6 +23,7 @@ public class CustomBuilding : PlacableItem
         if (parsedPositions != null)
         {
             _requiredFreeSpaces = parsedPositions;
+            UnityEditor.EditorUtility.SetDirty(this);
         }
     }
 

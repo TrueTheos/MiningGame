@@ -56,10 +56,37 @@ MonoBehaviour:
   canBeDestroyedToReplace: 0
   ParticleColors: []
   Pos: {x: 0, y: 0}
-  Solid: 1
+  Solid: 0
   Durability: 10
   _size: {x: 5, y: 7}
-  _requiredFreeSpaces: []
+  _requiredFreeSpaces:
+  - {x: 0, y: 0}
+  - {x: 0, y: 1}
+  - {x: -1, y: 2}
+  - {x: 0, y: 2}
+  - {x: 1, y: 2}
+  - {x: -2, y: 3}
+  - {x: -1, y: 3}
+  - {x: 0, y: 3}
+  - {x: 1, y: 3}
+  - {x: 2, y: 3}
+  - {x: -2, y: 4}
+  - {x: -1, y: 4}
+  - {x: 0, y: 4}
+  - {x: 1, y: 4}
+  - {x: 2, y: 4}
+  - {x: -2, y: 5}
+  - {x: -1, y: 5}
+  - {x: 0, y: 5}
+  - {x: 1, y: 5}
+  - {x: 2, y: 5}
+  - {x: -2, y: 6}
+  - {x: -1, y: 6}
+  - {x: 0, y: 6}
+  - {x: 1, y: 6}
+  - {x: 2, y: 6}
+  - {x: -2, y: 2}
+  - {x: 2, y: 2}
 --- !u!1 &8984408038273143224
 GameObject:
   m_ObjectHideFlags: 0
@@ -132,7 +159,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 5
   m_Sprite: {fileID: 21300000, guid: 2341c9a7feb15134a87f6f323519bb6a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
