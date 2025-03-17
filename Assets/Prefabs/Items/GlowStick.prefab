@@ -132,6 +132,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Glow Stick
   SpriteRend: {fileID: 112056311448468624}
+  MaxStack: 100
   _maxThrowPower: 7
   IsThrown: 0
   Light:

@@ -48,6 +48,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Door
   SpriteRend: {fileID: 1119150394957375725}
+  MaxStack: 100
   allowedPlacements: 2
   destroyWhenSupportDestroyed: 1
   dropItself: 1

@@ -6,6 +6,8 @@ public abstract class Item : MonoBehaviour
     public string Name;
     public SpriteRenderer SpriteRend;
 
+    public int MaxStack = 1;
+
     protected Transform _hand => Player.Instance.Hand;
 
     public void OnEnable()

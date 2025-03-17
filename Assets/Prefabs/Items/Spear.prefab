@@ -135,6 +135,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Spear
   SpriteRend: {fileID: 4114498406342867458}
+  MaxStack: 100
   _maxThrowPower: 28
   IsThrown: 0
   _damage: 3

@@ -16,12 +16,16 @@ public class Player : Entity
     public Transform Hand => _playerMovement.Hand;
     public Vector2Int Pos => _playerMovement.Pos;
 
+    private Rigidbody2D _rb;
+    public Rigidbody2D RB => _rb;
+
     public bool IsFacingRight => _playerMovement.IsFacingRight;
 
     protected override void Awake()
     {
         base.Awake();
         Instance = this;
+        _rb = GetComponent<Rigidbody2D>();
         _playerMovement = GetComponent<PlayerMovement>();
 
         CurrentHealth = _maxHealth;

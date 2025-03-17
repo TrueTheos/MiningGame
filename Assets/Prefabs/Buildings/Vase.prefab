@@ -47,6 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Vase
   SpriteRend: {fileID: 2424654293289496809}
+  MaxStack: 100
   allowedPlacements: 2
   destroyWhenSupportDestroyed: 1
   dropItself: 0

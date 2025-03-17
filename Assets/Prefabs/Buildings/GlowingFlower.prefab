@@ -65,6 +65,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Glowing Flower
   SpriteRend: {fileID: 5929953770191980229}
+  MaxStack: 100
   allowedPlacements: 18
   destroyWhenSupportDestroyed: 1
   dropItself: 1

@@ -94,6 +94,8 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 _lastFootstepPosition;
     private float _fallStartY;
     private Inventory _inventory;
+    private Vector2 _externalForce;
+    private bool _additionalForceApplied;
 
     private void Awake()
     {
@@ -101,6 +103,19 @@ public class PlayerMovement : MonoBehaviour
         _rb = GetComponent<Rigidbody2D>();
         _originalGravityScale = _rb.gravityScale;
     }
+    public void AddForce(Vector2 force, float duration)
+    {
+        _rb.AddForce(force, ForceMode2D.Impulse);
+        _additionalForceApplied = true;
+        StartCoroutine(ResetAddForce(duration));
+    }
+
+    private IEnumerator ResetAddForce(float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        _additionalForceApplied = false;
+    }
+
 
     private bool _IsFalling()
     {
@@ -298,15 +313,20 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (IsClimbing)
+        if (!_additionalForceApplied)
         {
-            float currentClimbSpeed = InWeb ? _climbSpeed * _webSlowdownFactor : _climbSpeed;
-            _rb.velocity = new Vector2(_horizontal * _currentSpeed, _vertical * currentClimbSpeed);
+            if (IsClimbing)
+            {
+                _rb.velocity = new Vector2(_horizontal * _currentSpeed, _vertical * _climbSpeed);
+            }
+            else
+            {
+                _rb.velocity = new Vector2(_horizontal * _currentSpeed, _rb.velocity.y);
+            }
         }
-        else
-        {
-            _rb.velocity = new Vector2(_horizontal * _currentSpeed, _rb.velocity.y);
-        }
+
+        //gradually reduce the external force over time.
+        //externalForce = Vector2.Lerp(externalForce, Vector2.zero, Time.fixedDeltaTime * 5f);
 
         _animator.SetFloat("Movement", Mathf.Abs(_rb.velocity.x));
 

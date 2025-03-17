@@ -11514,6 +11514,8 @@ MonoBehaviour:
     Amount: 1
   - Item: {fileID: 431985189366238903, guid: 2ad232dc4285e574a9698e8b4f4aa195, type: 3}
     Amount: 5
+  - Item: {fileID: 3531149650657491416, guid: 39872eca5c231164e94780cd91491db6, type: 3}
+    Amount: 1
   slotCount: 27
   hotbarLength: 9
   _slotPrefab: {fileID: 3171668138692863855, guid: f6cdff9b2563a9a41a25a81f926a16dd, type: 3}

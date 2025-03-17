@@ -126,6 +126,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Torch
   SpriteRend: {fileID: 4478670608722118212}
+  MaxStack: 100
   allowedPlacements: 18
   destroyWhenSupportDestroyed: 1
   dropItself: 1

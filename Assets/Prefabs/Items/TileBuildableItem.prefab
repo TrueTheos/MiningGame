@@ -47,6 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: 
   SpriteRend: {fileID: 94772092804500497}
+  MaxStack: 100
   allowedPlacements: 1
   destroyWhenSupportDestroyed: 0
   dropItself: 1
