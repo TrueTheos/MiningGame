@@ -10823,7 +10823,7 @@ MonoBehaviour:
   _tileSize: 8
   _playerLightRadius: 5
   _playerLightIntensity: 1
-  _lightLoseRate: 0.7
+  _lightLoseRate: 0.75
   _wallLightLoseRate: 0.66
   _player: {fileID: 1174165914}
   _smoothingMaterial: {fileID: 2100000, guid: 6de04bf9b54ef8145af390ac2a4a54b1, type: 2}
@@ -11516,6 +11516,8 @@ MonoBehaviour:
     Amount: 5
   - Item: {fileID: 3531149650657491416, guid: 39872eca5c231164e94780cd91491db6, type: 3}
     Amount: 1
+  - Item: {fileID: 8362002883964437107, guid: 63efe89c0a285674989f98f086306a3c, type: 3}
+    Amount: 5
   slotCount: 27
   hotbarLength: 9
   _slotPrefab: {fileID: 3171668138692863855, guid: f6cdff9b2563a9a41a25a81f926a16dd, type: 3}

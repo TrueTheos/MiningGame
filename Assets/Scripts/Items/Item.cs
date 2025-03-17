@@ -10,11 +10,6 @@ public abstract class Item : MonoBehaviour
 
     protected Transform _hand => Player.Instance.Hand;
 
-    public void OnEnable()
-    {
-        //if(SpriteRend != null) SpriteRend.sortingOrder = 6;
-    }
-
     public virtual void Holding() { }
     public virtual void EndUse() { }
     public virtual void UseOnce() { }

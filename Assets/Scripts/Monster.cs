@@ -73,7 +73,7 @@ public abstract class Monster : Entity, IChunkObject
 
     public Vector2Int GetPlayerPosition()
     {
-        return _player.Pos;
+        return _player != null ? _player.Pos : Vector2Int.zero;
     }
 
     public abstract bool IsGrounded();

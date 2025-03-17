@@ -26,6 +26,12 @@ public class Door : CustomBuilding
         _isOpen = false;
     }
 
+    private void OnEnable()
+    {
+        if(_doorCollider == null) _doorCollider = GetComponent<BoxCollider2D>();
+        if (!_isPlaced) _doorCollider.enabled = false;
+    }
+
     public override void OnPlace(int x, int y)
     {
         base.OnPlace(x, y);
