@@ -185,6 +185,7 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             var item = ItemAmount.Item;
             item.gameObject.transform.SetParent(Player.Instance.transform);
+            item.OnDeselect();
             item.gameObject.SetActive(false);
         }
 
@@ -203,6 +204,7 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             item.gameObject.transform.SetParent(itemHolder);
             item.gameObject.SetActive(true);
             item.gameObject.transform.localPosition = Vector3.zero;
+            item.OnSelect();
             return item;
         }
         return null;

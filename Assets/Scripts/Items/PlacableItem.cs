@@ -25,11 +25,15 @@ public abstract class PlacableItem : Item
     public bool canBeDestroyedToReplace;
     public List<Color> ParticleColors = new();
 
-    [HideInInspector] public Vector2Int Pos;
+    [SerializeField] public Vector2Int Pos;
 
     protected bool _isPlaced => Pos != Vector2.zero;
 
-    public virtual void OnPlace(int x, int y) { }
+    public virtual void OnPlace(int x, int y) 
+    {
+        SpriteRend.enabled = true;
+    }
+
     public Vector2Int MousePosToTilePos()
     {
         Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);

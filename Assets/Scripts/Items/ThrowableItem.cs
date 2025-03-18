@@ -21,7 +21,6 @@ public class ThrowableItem : Item
 
     public override void UseOnce()
     {
-        base.UseOnce();
         Throw(_maxThrowPower);
     }
 
@@ -47,6 +46,7 @@ public class ThrowableItem : Item
             Vector2 throwDirection = (mousePos - (Vector2)playerPos).normalized;
 
             thrown.GetComponent<ThrowableItem>().IsThrown = true;
+            thrown.GetComponent<ThrowableItem>().SpriteRend.enabled = true;
 
             rb.AddForce(throwDirection * power, ForceMode2D.Impulse);
             thrown.GetComponent<ThrowableItem>().OnThrow(thrown.transform.position, power);

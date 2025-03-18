@@ -55,6 +55,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Components")]
     [SerializeField] private Transform _groundCheck;
     [SerializeField] private Animator _animator;
+    public Animator Anim => _animator;
     [SerializeField] private LayerMask _groundLayer;
     [SerializeField] private SpriteRenderer _art;
     [SerializeField] private Transform _hand;
@@ -242,11 +243,11 @@ public class PlayerMovement : MonoBehaviour
             {
                 Vector2 direction = new Vector2(_horizontal, _vertical).normalized;
 
-                float adjustedRayDistance = .3f;
+                float adjustedRayDistance = .4f;
 
                 if (Mathf.Abs(_horizontal) < 0.1f && Mathf.Abs(_vertical) > 0.1f)
                 {
-                    adjustedRayDistance = .3f * 2;
+                    adjustedRayDistance = .4f * 2;
                 }
 
                 RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, adjustedRayDistance, Layers.GROUND_LAYER);

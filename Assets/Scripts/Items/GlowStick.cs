@@ -9,9 +9,8 @@ public class GlowStick : ThrowableItem
     public LightSource Light;
     [SerializeField] private Light2D _light2D;
 
-    private void Awake()
+    public void Start()
     {
-        base.Awake();
         _light2D.gameObject.SetActive(false);
     }
 

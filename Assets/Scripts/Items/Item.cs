@@ -14,6 +14,15 @@ public abstract class Item : MonoBehaviour
     public virtual void EndUse() { }
     public virtual void UseOnce() { }
 
+    public virtual void OnSelect()
+    {
+        SpriteRend.enabled = false;
+    }
+    public virtual void OnDeselect()
+    {
+        
+    }
+
     public bool EqualsType(Item right)
     {
         return Name == right.Name;

@@ -55,11 +55,13 @@ public class Axe : Item
 
     private IEnumerator Mining()
     {
+        SpriteRend.enabled = true;
         while (_isHolding)
         {
             _anim.speed = _clip.length / _cooldown;
             yield return new WaitForSeconds(_cooldown);
         }
+        SpriteRend.enabled = false;
 
         _anim.speed = 1f;
     }

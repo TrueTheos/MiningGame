@@ -58,6 +58,7 @@ public class Pike : Item, IWeapon
 
     private IEnumerator Attack()
     {
+        SpriteRend.enabled = true;
         transform.position = Player.Instance.transform.position;
         _canAttack = false;
         _animation.Play();
@@ -68,6 +69,7 @@ public class Pike : Item, IWeapon
         //ransform.position = _hand.position;
         //transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.Euler(_defaultRotation);
+        SpriteRend.enabled = false;
     }
 
     public void OnDisable()

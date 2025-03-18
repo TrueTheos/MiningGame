@@ -8,8 +8,6 @@ using UnityEngine;
 public class Spear : ThrowableItem, IWeapon
 {
     [SerializeField] private int _damage;
-    [SerializeField] private GameObject _inHandVer;
-    [SerializeField] private GameObject _thrownVer;
     [SerializeField] private float _minThrowPower;
     [SerializeField] private float _throwChargeSpeed;
     [SerializeField] private float _maxFallDistance = 10f;
@@ -24,9 +22,6 @@ public class Spear : ThrowableItem, IWeapon
     public override void OnThrow(Vector2 origin, float power)
     {
         AudioManager.Instance.PlaySpearThrow();
-
-        _inHandVer.SetActive(false);
-        _thrownVer.SetActive(true);
 
         _originalGravity = _rb.gravityScale;
         _throwOrigin = origin;
@@ -71,8 +66,7 @@ public class Spear : ThrowableItem, IWeapon
 
     public override void UseOnce()
     {
-        _inHandVer.SetActive(false);
-        _thrownVer.SetActive(true);
+        SpriteRend.enabled = true;
         _currentThrowPower = _minThrowPower;
     }
 
@@ -100,7 +94,7 @@ public class Spear : ThrowableItem, IWeapon
 
             if(_currentThrowPower ==  _maxThrowPower)
             {
-                _thrownVer.GetComponentInChildren<SpriteRenderer>().Blink();
+                SpriteRend.Blink();
             }
         }
     }
@@ -109,8 +103,7 @@ public class Spear : ThrowableItem, IWeapon
     {
         base.EndUse();
         _hand.right = Vector2.right;
-        _inHandVer.SetActive(true);
-        _thrownVer.SetActive(false);
+        SpriteRend.enabled = false;
         Throw(Mathf.Max(_minThrowPower, _currentThrowPower));
         _currentThrowPower = _minThrowPower;
     }

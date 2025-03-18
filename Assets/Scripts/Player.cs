@@ -43,12 +43,13 @@ public class Player : Entity
 
     public override void OnTakeDamage(DamageSource sourceType)
     {
+        Movement.Anim.SetTrigger("Hurt");
         if (sourceType == DamageSource.Fall)
         {
             List<float> forces = new() { -.2f, .2f};
             GetComponent<CinemachineImpulseSource>().GenerateImpulseWithVelocity(new(forces.Random(), forces.Random(), 0));
             AudioManager.Instance.PlayFallDamage();
         }
-        Blink();
+        //Blink();
     }
 }
