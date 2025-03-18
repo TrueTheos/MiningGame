@@ -31,6 +31,6 @@ public class TooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 
     public void OnDisable()
     {
-        TooltipManager.Instance.HideTooltip();
+        TooltipManager.Instance?.HideTooltip();
     }
 }

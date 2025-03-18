@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEditor.Experimental.GraphView.GraphView;
 using Random = UnityEngine.Random;
 
 public class Player : Entity
@@ -16,10 +17,18 @@ public class Player : Entity
     public Transform Hand => _playerMovement.Hand;
     public Vector2Int Pos => _playerMovement.Pos;
 
+    public int Depth => _worldManager.WorldHeight - Pos.y; 
+    public int Temperature => 10 + Depth / 10;
+
     private Rigidbody2D _rb;
     public Rigidbody2D RB => _rb;
 
     public bool IsFacingRight => _playerMovement.IsFacingRight;
+
+    public int CurrentWarningTemperature = 30;
+    public int CurrentDangerousTemperature = 50;
+
+    private WorldManager _worldManager;
 
     protected override void Awake()
     {
@@ -29,6 +38,11 @@ public class Player : Entity
         _playerMovement = GetComponent<PlayerMovement>();
 
         CurrentHealth = _maxHealth;
+    }
+
+    private void Start()
+    {
+        _worldManager = WorldManager.Instance;
     }
 
     public void AddModifier(StatModifier modifier)

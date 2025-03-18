@@ -8,6 +8,7 @@ public abstract class Entity : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer _art;
     [SerializeField] protected int _maxHealth;
+    public int MaxHealth => _maxHealth;
     public int CurrentHealth;
     
     private float _blinkDuration = .1f;
