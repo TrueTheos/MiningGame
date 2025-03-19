@@ -897,7 +897,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 490119166}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
   m_Name: 
@@ -10564,7 +10564,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 11.25
+  orthographic size: 7.5
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -10816,7 +10816,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &652461490
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10958,9 +10958,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Depth: 10
-
-'
+  m_text: "Depth: \n10\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 713ee7caa4c4bb848b80525c1ee6f044, type: 2}
   m_sharedMaterial: {fileID: -5106236614541945326, guid: 713ee7caa4c4bb848b80525c1ee6f044, type: 2}
@@ -11044,7 +11042,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 660080716}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
   m_Name: 
@@ -11732,8 +11730,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -207.75208, y: -50}
-  m_SizeDelta: {x: 400, y: 100}
+  m_AnchoredPosition: {x: -168.79211, y: -50}
+  m_SizeDelta: {x: 322.0801, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1166168225
 MonoBehaviour:
@@ -12020,6 +12018,8 @@ MonoBehaviour:
   _art: {fileID: 302679740}
   _maxHealth: 100
   CurrentHealth: 0
+  CurrentWarningTemperature: 30
+  CurrentDangerousTemperature: 40
 --- !u!114 &1174165919
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13578,7 +13578,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Health: 100/100'
+  m_text: "Health: \n100/100"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 713ee7caa4c4bb848b80525c1ee6f044, type: 2}
   m_sharedMaterial: {fileID: -5106236614541945326, guid: 713ee7caa4c4bb848b80525c1ee6f044, type: 2}
@@ -13662,7 +13662,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1961636539}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
   m_Name: 
@@ -13670,7 +13670,7 @@ MonoBehaviour:
   m_IgnoreLayout: 0
   m_MinWidth: -1
   m_MinHeight: -1
-  m_PreferredWidth: 157.69
+  m_PreferredWidth: 75.97
   m_PreferredHeight: -1
   m_FlexibleWidth: 0
   m_FlexibleHeight: -1
