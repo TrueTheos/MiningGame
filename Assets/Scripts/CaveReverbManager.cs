@@ -130,9 +130,9 @@ public class CaveReverbManager : MonoBehaviour
             regionTiles.Remove(id);
 
             // If the changed tile now represents an open space, recalc the region
-            if (WorldManager.Instance.WorldData[x, y] == null)
+            if (WorldManager.Instance.GetTile(x, y) == null)
             {
-                var newRegion = FloodFillRegion(changedTile, id, WorldManager.Instance.WorldData);
+                var newRegion = FloodFillRegion(changedTile, id);
                 if (newRegion.Count >= reverbSettings.minCaveSize)
                 {
                     CreateReverbZone(newRegion, id);
@@ -146,7 +146,7 @@ public class CaveReverbManager : MonoBehaviour
         while (!WorldManager.Instance.Ready)
             yield return new WaitForSeconds(1f);
 
-        UpdateCaveRegions(WorldManager.Instance.WorldData);
+        UpdateCaveRegions();
 
         Vector2 playerPos = playerTransform.position;
 
@@ -168,7 +168,7 @@ public class CaveReverbManager : MonoBehaviour
         }
     }
 
-    public void UpdateCaveRegions(TileSO[,] tileMap)
+    public void UpdateCaveRegions()
     {
         tileToRegionMap.Clear();
 
@@ -176,14 +176,16 @@ public class CaveReverbManager : MonoBehaviour
         int width = WorldManager.Instance.WorldWidth;
         int height = WorldManager.Instance.WorldHeight;
 
+        WorldManager worldManager = WorldManager.Instance;
+
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
                 Vector2Int pos = new Vector2Int(x, y);
-                if (tileMap[x, y] == null && !tileToRegionMap.ContainsKey(pos))
+                if (worldManager.GetTile(pos) == null && !tileToRegionMap.ContainsKey(pos))
                 {
-                    var region = FloodFillRegion(pos, currentRegion, tileMap);
+                    var region = FloodFillRegion(pos, currentRegion);
                     if (region.Count >= reverbSettings.minCaveSize)
                     {
                         CreateReverbZone(region, currentRegion);
@@ -221,18 +223,20 @@ public class CaveReverbManager : MonoBehaviour
         zones[regionId] = zone;
     }
 
-    private HashSet<Vector2Int> FloodFillRegion(Vector2Int start, int regionId, TileSO[,] tileMap)
+    private HashSet<Vector2Int> FloodFillRegion(Vector2Int start, int regionId)
     {
         HashSet<Vector2Int> region = new HashSet<Vector2Int>();
         Queue<Vector2Int> queue = new Queue<Vector2Int>();
         queue.Enqueue(start);
+
+        WorldManager worldManager = WorldManager.Instance;
 
         while (queue.Count > 0)
         {
             Vector2Int current = queue.Dequeue();
 
             if (!WorldManager.Instance.IsTileInBounds(current.x, current.y) ||
-                tileMap[current.x, current.y] != null ||
+                worldManager.GetTile(current) != null ||
                 region.Contains(current))
                 continue;
 

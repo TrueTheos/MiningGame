@@ -81,7 +81,7 @@ public class LightManager : MonoBehaviour
         _lightRenderer.transform.position = new Vector2(_texOriginX + _textureWidth / 2f,
                                                           _texOriginY + _textureHeight / 2f);
         _lightRenderer.transform.localScale *= 100f;
-        _lightRenderer.sortingOrder = 10;
+        _lightRenderer.sortingOrder = 50;
     }
  
     void UpdateTextureRegion()
@@ -210,7 +210,7 @@ public class LightManager : MonoBehaviour
  
         _lightMap[x, y] = light;
  
-        var building = _worldManager.Buildings[x, y];
+        var building = _worldManager.GetBuilding(x, y);
         if (building != null)
         {
             Color finalColor = building.SpriteRend.color;

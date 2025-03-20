@@ -50,7 +50,7 @@ public abstract class PlacableItem : Item
             {
                 if (x == Pos.x && y == Pos.y) continue;
 
-                var building = WorldManager.Instance.Buildings[x, y];
+                var building = WorldManager.Instance.GetBuilding(x, y);
 
                 if (building != null)
                 {
@@ -107,10 +107,10 @@ public abstract class PlacableItem : Item
 
     private bool CheckGround(int x, int y)
     {
-        var botTile = WorldManager.Instance.WorldData[x, y - 1];
+        var botTile = WorldManager.Instance.GetTile(x, y - 1);
         if (botTile != null && botTile.Solid) return true;
 
-        var botBuilding = WorldManager.Instance.Buildings[x, y - 1];
+        var botBuilding = WorldManager.Instance.GetBuilding(x, y - 1);
         if (botBuilding != null && (botBuilding.Solid ||
             (allowedPlacements.HasFlag(PlacementType.SameType) && botBuilding.GetType() == this.GetType())))
             return true;
@@ -120,17 +120,17 @@ public abstract class PlacableItem : Item
 
     private bool CheckWall(int x, int y)
     {
-        var leftTile = WorldManager.Instance.WorldData[x - 1, y];
+        var leftTile = WorldManager.Instance.GetTile(x - 1, y);
         if (leftTile != null && leftTile.Solid) return true;
-        var rightTile = WorldManager.Instance.WorldData[x + 1, y];
+        var rightTile = WorldManager.Instance.GetTile(x + 1, y);
         if (rightTile != null && rightTile.Solid) return true;
 
-        var leftBuilding = WorldManager.Instance.Buildings[x - 1, y];
+        var leftBuilding = WorldManager.Instance.GetBuilding(x - 1, y);
         if (leftBuilding != null && (leftBuilding.Solid ||
             (allowedPlacements.HasFlag(PlacementType.SameType) && leftBuilding.GetType() == this.GetType())))
             return true;
 
-        var rightBuilding = WorldManager.Instance.Buildings[x + 1, y];
+        var rightBuilding = WorldManager.Instance.GetBuilding(x + 1, y);
         if (rightBuilding != null && (rightBuilding.Solid ||
             (allowedPlacements.HasFlag(PlacementType.SameType) && rightBuilding.GetType() == this.GetType())))
             return true;
@@ -140,10 +140,11 @@ public abstract class PlacableItem : Item
 
     private bool CheckCeiling(int x, int y)
     {
-        var topTile = WorldManager.Instance.WorldData[x, y + 1];
+        if(!WorldManager.Instance.IsTileInBounds(x, y + 1)) return false;
+        var topTile = WorldManager.Instance.GetTile(x, y + 1);
         if (topTile != null && topTile.Solid) return true;
 
-        var topBuilding = WorldManager.Instance.Buildings[x, y + 1];
+        var topBuilding = WorldManager.Instance.GetBuilding(x, y + 1);
         if (topBuilding != null && (topBuilding.Solid ||
             (allowedPlacements.HasFlag(PlacementType.SameType) && topBuilding.GetType() == this.GetType())))
             return true;

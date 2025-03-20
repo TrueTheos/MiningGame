@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using Unity.Burst;
 using Unity.Collections;
@@ -9,33 +10,11 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-[System.Serializable]
-public class BiomeSettings
-{
-    public TileSO baseTile;
-    public List<DecorativeBuildingChance> decorativeBuildings = new();
-    public int nodeCount = 5;
-    public int initialSpreadRadius = 50;
-    public int spreadIterations = 4;
-    public float spreadChance = 0.55f;
-    public float diagonalSpreadModifier = 0.7f;
-}
-
 [Serializable]
 public struct DecorativeBuildingChance
 {
     public CustomBuilding Building;
     public float Chance;
-}
-
-[System.Serializable]
-public class JungleBiomeSettings : BiomeSettings
-{
-    public Decoration jungleGrassTile;
-    public float grassSpawnChance;
-    public Decoration vineTile;
-    public Vector2Int maxVineLength;
-    public float vineChance = 0.3f;
 }
 
 namespace Assets.Scripts.Managers.WorldGeneration
@@ -144,37 +123,14 @@ namespace Assets.Scripts.Managers.WorldGeneration
         }
     }
 
-    public partial class WorldGenerator : MonoBehaviour
+    public class WorldGenerator : MonoBehaviour
     {
-        [Header("Terrain Settings")]
-        [SerializeField] private float _terrainHeightMultiplier = 10f;
-        [SerializeField] private float _terrainSmoothness = 0.1f;
-
-        [Header("Jungle Biome Settings")]
-        [SerializeField] private JungleBiomeSettings jungleSettings;
-
-        [Header("Cave Settings (Cellular Automata)")]
-        [SerializeField] private float _perlinCaveThreshold = 0.55f;
-        [SerializeField] private float _perlinCaveScale = 0.1f;
-        [SerializeField] private int _caveSimulationSteps = 4;
-        [SerializeField] private float _initialCaveChance = 0.45f;
-        [SerializeField] private List<int> _birthLimit = new();
-        [SerializeField] private int _deathLimit = 2;
-
         [Header("Ore Generation")]
         [SerializeField] private float _oreSpawnChance = 0.1f;
 
         [Header("Tiles")]
         [SerializeField] private TileSO _stoneTile;
         [SerializeField] private TileSO _oreTile;
-
-        [SerializeField] private CustomBuilding _vase;
-        [SerializeField] private float _vaseSpawnChance = 0.02f;
-
-        [Header("Web Biome Settings")]
-        [SerializeField] private Web _webPrefab;
-        [SerializeField] private int _webNodesCount;
-        [SerializeField] private int _webNodeSize;
 
         [Header("UI Info")]
         [SerializeField] private GameObject _generationUIParent;
@@ -193,66 +149,64 @@ namespace Assets.Scripts.Managers.WorldGeneration
 
         public bool Ready => _ready;
 
-        private List<Vector2Int> _freeTiles = new();
+        [SerializeField] private List<WorldLayer> _layers = new List<WorldLayer>();
 
-        private Vector2Int[] sixDirections =
+        private Queue<WorldLayer> _layersQueue = new Queue<WorldLayer>();
+
+        private int _layerStartY;
+
+        private void Awake()
         {
-            new Vector2Int(-1, -1), new Vector2Int(0, -1), new Vector2Int(1, -1),
-            new Vector2Int(-1,  0),                    new Vector2Int(1,  0),
-            new Vector2Int(-1,  1), new Vector2Int(0,  1), new Vector2Int(1,  1)
-        };
+            foreach (var layer in _layers)
+            {
+                _layersQueue.Enqueue(layer);
+            }
+
+            _layerStartY = GetHeight();
+        }
+
+        public void SetGenText(string text)
+        {
+            _currentInfo.text = text;
+        }
+
+        public int GetHeight()
+        {
+            return _layers.Sum(x => x.Height);
+        }
 
         public void Generate(WorldManager wm)
         {
             _worldManager = wm;
             _chunkSize = WorldManager.CHUNK_SIZE;
             _worldManager.MainTilemap.ClearAllTiles();
-            StartCoroutine(GenerateWorldCoroutine());
+            SetupGeneration();
+            GenerateNextLayer();
         }
 
-        private IEnumerator GenerateWorldCoroutine()
+        private void SetupGeneration()
         {
             _generationUIParent.gameObject.SetActive(true);
-
             _ready = false;
-            int numChunksX = Mathf.CeilToInt((float)_worldManager.WorldWidth / _chunkSize);
-            int numChunksY = Mathf.CeilToInt((float)_worldManager.WorldHeight / _chunkSize);
+        }
 
-            // Generate base terrain and caves chunk by chunk
-            int chunksToGen = numChunksX * numChunksY;
-            int generatedChunks = 0;
-
-            _currentInfo.text = "Generating chunks...";
-            for (int chunkX = 0; chunkX < numChunksX; chunkX++)
+        public void GenerateNextLayer()
+        {
+            if(_layersQueue == null || _layersQueue.Count == 0)
             {
-                for (int chunkY = 0; chunkY < numChunksY; chunkY++)
-                {
-                    GenerateChunk(chunkX, chunkY);
-                    generatedChunks++;
-
-                    if ((chunkX * numChunksY + chunkY) % 4 == 0)
-                        yield return null;
-                }
+                OnGenerateAllLayers();
+                return;
             }
 
-            for (int step = 0; step < _caveSimulationSteps; step++)
-            {
-                _currentInfo.text = "Generating caves...";
-                yield return StartCoroutine(ProcessCellularAutomataCoroutine());
-            }
+            var nextLayer = _layersQueue.Dequeue();
 
-            _currentInfo.text = "Generating ores...";
-            yield return StartCoroutine(GenerateOresJobified());
+            _layerStartY -= nextLayer.Height;
 
-            _currentInfo.text = "Spawning vases...";
-            yield return StartCoroutine(GenerateVasesCoroutine());
+            nextLayer.Generate(_layerStartY);
+        }
 
-            _currentInfo.text = "Spreading jungle...";
-            GenerateJungleBiome();
-
-            _currentInfo.text = "Spawning webs...";
-            GenerateWebBiome();
-
+        private void OnGenerateAllLayers()
+        {
             CreateBorder();
             _ready = true;
 
@@ -291,82 +245,6 @@ namespace Assets.Scripts.Managers.WorldGeneration
             rightBorder.transform.localScale = new Vector3(borderThickness, height + 2 * borderThickness, 1f);
         }
 
-        private void GenerateWebBiome()
-        {
-            HashSet<Vector2Int> ignore = new();
-
-            int attemptLimit = 16;
-            int currAttempts = 0;
-
-            for (int i = 0; i < _webNodesCount; i++)
-            {
-                currAttempts = 0;
-
-                Vector2Int start;
-
-                do
-                {
-                    attemptLimit++;
-                    start = _freeTiles.Random();
-                    _freeTiles.RemoveAt(_freeTiles.IndexOf(start));
-                }
-                while (!_worldManager.IsEmpty(start) && currAttempts <= attemptLimit);
-
-                if (!_worldManager.IsEmpty(start)) continue;
-
-                Queue<Vector2Int> queue = new Queue<Vector2Int>();
-                queue.Enqueue(start);
-
-                int spread = 0;
-                while (queue.Count > 0 && spread < _webNodeSize)
-                {
-                    var pos = queue.Dequeue();
-                    List<Vector2Int> neighbors = GetNeighbors(pos.x, pos.y);
-
-                    foreach (var n in neighbors)
-                    {
-                        if (ignore.Contains(n)) continue;
-
-                        if (_worldManager.IsEmpty(n) && UnityEngine.Random.Range(0f, 1f) > 0.3)
-                        {
-                            _worldManager.PlaceBuilding(n.x, n.y, _webPrefab);
-                            queue.Enqueue(n);
-                            spread++;
-                            if (spread >= _webNodeSize) break;
-                        }
-                        else
-                        {
-                            ignore.Add(n);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void GenerateChunk(int chunkX, int chunkY)
-        {
-            int startX = chunkX * _chunkSize;
-            int startY = chunkY * _chunkSize;
-            int endX = Mathf.Min(startX + _chunkSize, _worldManager.WorldWidth);
-            int endY = Mathf.Min(startY + _chunkSize, _worldManager.WorldHeight);
-
-            // Generate terrain and initial caves for this chunk
-            for (int x = startX; x < endX; x++)
-            {
-                int groundHeight = Mathf.FloorToInt(Mathf.PerlinNoise(x * _terrainSmoothness, 0)
-                    * _terrainHeightMultiplier + (_worldManager.WorldHeight / 2));
-
-                for (int y = startY; y < endY; y++)
-                {
-                    // Combine terrain generation and initial cave generation
-                    float caveNoise = Mathf.PerlinNoise(x * _perlinCaveScale, y * _perlinCaveScale);
-                    bool shouldBeCave = caveNoise > _perlinCaveThreshold || UnityEngine.Random.value < _initialCaveChance;
-
-                    _worldManager.SetTile(x, y, shouldBeCave ? null : _stoneTile, false);
-                }
-            }
-        }
-
         [BurstCompile]
         private struct OreGenerationJob : IJobParallelFor
         {
@@ -402,7 +280,7 @@ namespace Assets.Scripts.Managers.WorldGeneration
             {
                 int x = i % _worldManager.WorldWidth;
                 int y = i / _worldManager.WorldWidth;
-                isStone[i] = _worldManager.WorldData[x, y] == _stoneTile;
+                isStone[i] = _worldManager.GetTile(x, y) == _stoneTile;
             }
 
             uint seed = (uint)UnityEngine.Random.Range(1, int.MaxValue);
@@ -434,115 +312,6 @@ namespace Assets.Scripts.Managers.WorldGeneration
 
             isStone.Dispose();
             shouldBeOre.Dispose();
-        }
-
-        private IEnumerator ProcessCellularAutomataCoroutine()
-        {
-            var newMap = new TileSO[_worldManager.WorldWidth, _worldManager.WorldHeight];
-
-            for (int chunkX = 0; chunkX < _worldManager.WorldWidth; chunkX += _chunkSize)
-            {
-                for (int chunkY = 0; chunkY < _worldManager.WorldHeight; chunkY += _chunkSize)
-                {
-                    ProcessCellularAutomataChunk(chunkX, chunkY, newMap);
-
-                    if ((chunkX + chunkY) % (_chunkSize * 2) == 0)
-                        yield return null;
-                }
-            }
-
-            for (int x = 0; x < _worldManager.WorldWidth; x++)
-            {
-                for (int y = 0; y < _worldManager.WorldHeight; y++)
-                {
-                    _worldManager.SetTile(x, y, newMap[x, y], false);
-                }
-
-                if (x % 100 == 0)
-                    yield return null;
-            }
-        }
-
-        private void ProcessCellularAutomataChunk(int startX, int startY, TileSO[,] newMap)
-        {
-            int endX = Mathf.Min(startX + _chunkSize, _worldManager.WorldWidth);
-            int endY = Mathf.Min(startY + _chunkSize, _worldManager.WorldHeight);
-
-            for (int x = startX; x < endX; x++)
-            {
-                for (int y = startY; y < endY; y++)
-                {
-                    int neighborCount = 0;
-
-                    for (int nx = x - 1; nx <= x + 1; nx++)
-                    {
-                        for (int ny = y - 1; ny <= y + 1; ny++)
-                        {
-                            if (nx == x && ny == y) continue; // Skip the current cell
-
-                            if (nx >= 0 && nx < _worldWidth && ny >= 0 && ny < _worldHeight)
-                            {
-                                if (_worldManager.WorldData[nx, ny] != null) neighborCount++;
-                            }
-                            else
-                            {
-                                neighborCount++; // Treat out-of-bounds as solid
-                            }
-                        }
-                    }
-
-                    if (_worldManager.WorldData[x, y] != null)
-                    {
-                        var newtile = (neighborCount >= _deathLimit) ? _worldManager.WorldData[x, y] : null;
-                        newMap[x, y] = newtile;
-
-                        if (newtile == null) _freeTiles.Add(new Vector2Int(x, y));
-                    }
-                    else
-                    {
-                        var newtile = (neighborCount >= _birthLimit.Random()) ? _stoneTile : null;
-                        newMap[x, y] = newtile;
-
-                        if (newtile == null) _freeTiles.Add(new Vector2Int(x, y));
-                    }
-                }
-            }
-        }
-
-        private IEnumerator GenerateVasesCoroutine()
-        {
-            for (int x = 0; x < _worldManager.WorldWidth; x++)
-            {
-                for (int y = 1; y < _worldManager.WorldHeight; y++)
-                {
-                    if (_worldManager.WorldData[x, y] == null && _worldManager.WorldData[x, y - 1] != null)
-                    {
-                        if (UnityEngine.Random.value < _vaseSpawnChance)
-                        {
-                            _worldManager.PlaceBuilding(x, y, _vase);
-                        }
-                    }
-                }
-
-                if (x % 100 == 0)
-                    yield return null;
-            }
-        }
-
-        public List<Vector2Int> GetNeighbors(int x, int y)
-        {
-            List<Vector2Int> res = new List<Vector2Int>();
-
-            foreach (var dir in sixDirections)
-            {
-                int nx = x + dir.x, ny = y + dir.y;
-                if (nx >= 0 && nx < _worldWidth && ny >= 0 && ny < _worldHeight)
-                {
-                    res.Add(new Vector2Int(nx, ny));
-                }
-            }
-
-            return res;
         }
     }
 }

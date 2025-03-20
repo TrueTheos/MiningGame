@@ -1,4 +1,5 @@
 using Assets.Scripts.Managers.WorldGeneration;
+using Cinemachine;
 using DG.Tweening;
 using System;
 using System.Collections;
@@ -21,7 +22,7 @@ public class WorldManager : MonoBehaviour
     public static WorldManager Instance;
 
     public int WorldWidth;
-    public int WorldHeight;
+    public int WorldHeight => _worldGenerator.GetHeight();
     public Tilemap MainTilemap;
 
     [SerializeField] private ParticleSystem _destroyTileParticle;
@@ -29,6 +30,8 @@ public class WorldManager : MonoBehaviour
     [SerializeField] private PickupableItem _pickupableItem;
     [SerializeField] private LightSourceCustomBuilding _torchPrefab;
     [SerializeField] private LayerMask _hideOutsideRenderDstanceMask;
+    [SerializeField] private PolygonCollider2D _cameraBounds;
+    [SerializeField] private CinemachineConfiner2D _camConfiner;
 
     public UnityEvent OnWorldReady;
     public UnityEvent OnBlockPlace;
@@ -37,9 +40,9 @@ public class WorldManager : MonoBehaviour
     public const int CHUNK_SIZE = 32;
     public readonly int RENDER_DISTANCE_CHUNKS = 1; //in each direction
 
-    public TileSO[,] WorldData { get; private set; } // Stores world tiles (0 = air, 1 = dirt, 2 = stone, 3 = ore)
+    private TileSO[,] WorldData;
     public bool[,] PathNodes {  get; private set; }
-    public CustomBuilding[,] Buildings { get; private set; }
+    private CustomBuilding[,] Buildings;
 
     private Dictionary<Vector2Int, int> _durabilityLeft = new();
 
@@ -91,8 +94,31 @@ public class WorldManager : MonoBehaviour
         return WorldData[x,y] == null && Buildings[x,y] == null;
     }
 
+    public CustomBuilding GetBuilding(Vector2Int pos)
+    {
+        return GetBuilding(pos.x, pos.y);
+    }
+
+    public CustomBuilding GetBuilding(int x, int y)
+    {
+        if (!IsTileInBounds(x, y)) return null;
+        return Buildings[x, y];
+    }
+
+    public TileSO GetTile(Vector2Int pos)
+    {
+        return GetTile(pos.x, pos.y);
+    }
+
+    public TileSO GetTile(int x, int y)
+    {
+        if (!IsTileInBounds(x, y)) return null;
+        return WorldData[x, y];
+    }
+
     public bool IsSolid(int x, int y)
     {
+        if (!IsTileInBounds(x, y)) return false;
         return ((WorldData[x, y] != null && WorldData[x, y].Solid) || (Buildings[x, y] != null && Buildings[x, y].Solid));
     }
 
@@ -193,7 +219,7 @@ public class WorldManager : MonoBehaviour
 
         for (int x = WorldWidth / 2 - 1; x <= WorldWidth / 2 + 1; x++)
         {
-            for (int y = WorldHeight / 2 - 1; y <= WorldHeight / 2 + 1; y++)
+            for (int y = WorldHeight - 10; y <= WorldHeight - 7 + 1; y++)
             {
                 SetTile(x, y, null);
             }
@@ -201,11 +227,24 @@ public class WorldManager : MonoBehaviour
 
         MainTilemap.GetComponent<TilemapCollider2D>().enabled = true;
        
-        TryPlace(WorldWidth / 2, WorldHeight / 2 - 1, _torchPrefab);
+        TryPlace(WorldWidth / 2, WorldHeight - 10 - 1, _torchPrefab);
+
+        Vector2[] points = new Vector2[]
+        {
+            new Vector2(0, 0), // Bottom-left
+            new Vector2(WorldWidth, 0),  // Bottom-right
+            new Vector2(WorldWidth, WorldHeight),   // Top-right
+            new Vector2(0, WorldHeight)   // Top-left
+        };
+
+        _cameraBounds.points = points;
+
+        _camConfiner.InvalidateCache();
+        _camConfiner.m_BoundingShape2D = _cameraBounds;
 
         Ready = true;
 
-        _player.transform.position = new Vector2(WorldWidth / 2, WorldHeight / 2 + 1);
+        _player.transform.position = new Vector2(WorldWidth / 2, WorldHeight - 10 + 1);
         _player.gameObject.SetActive(true);
 
         Debug.Log($"WORLD GENERATED: {Time.time - time}");
@@ -502,6 +541,11 @@ public class WorldManager : MonoBehaviour
         return viewportPoint.x >= 0 && viewportPoint.x <= 1 &&
                viewportPoint.y >= 0 && viewportPoint.y <= 1 &&
                viewportPoint.z > 0; // Ensure it's in front of the camera
+    }
+
+    public bool IsTileInBounds(Vector2Int pos)
+    {
+        return IsTileInBounds(pos.x, pos.y);
     }
 
     public bool IsTileInBounds(int x, int y)

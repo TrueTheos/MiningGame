@@ -178,6 +178,9 @@ public class AtikiMonster : Monster
             Vector2Int left = node.Pos + Vector2Int.left;
             Vector2Int right = node.Pos + Vector2Int.right;
 
+            if (!_worldManager.IsTileInBounds(left)) continue;
+            if (!_worldManager.IsTileInBounds(right)) continue;
+
             // Add walking connections (horizontal)
             if (_nodes.ContainsKey(left)) node.AddConnection(PathNode.ConnectionType.WALK, _nodes[left]);
             if (_nodes.ContainsKey(right)) node.AddConnection(PathNode.ConnectionType.WALK, _nodes[right]);
