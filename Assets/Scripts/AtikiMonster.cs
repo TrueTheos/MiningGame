@@ -68,6 +68,7 @@ public class AtikiMonster : Monster
     protected override void Start()
     {
         base.Start();
+        _damageOnCollision = false; 
         _worldManager = WorldManager.Instance;
         _currentTargetPos = Vector2Int.zero;
         _currentWanderCooldown = _wanderChangeTargetCooldown.Random();
@@ -82,6 +83,7 @@ public class AtikiMonster : Monster
     public void Enrage()
     {
         if (Enraged) return;
+        _damageOnCollision = true;
         Enraged = true;
         ChangeState(_enragedState);
     }
@@ -310,6 +312,7 @@ public class AtikiMonster : Monster
 
     public override void OnTakeDamage(DamageSource sourceType)
     {
+        base.OnTakeDamage(sourceType);
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, _enrageOtherMonstersRadius, gameObject.layer);
         List<GameObject> monsters = new List<GameObject>();
 
@@ -444,66 +447,5 @@ public class AtikiMonster : Monster
         }
 
         return new List<Vector2Int>();
-    }
-
-    private void OnDrawGizmosSelected()
-    {      
-        if (CurrentPath != null && CurrentPath.Count > 0)
-        {
-            Gizmos.color = Color.white;
-            for (int i = 0; i < CurrentPath.Count - 1; i++)
-            {
-                Vector3 start = CurrentPath.ElementAt(i).Pos.ToVector3(offset: .5f);
-                Vector3 end = CurrentPath.ElementAt(i + 1).Pos.ToVector3(offset: .5f);
-                Gizmos.DrawLine(start, end);
-                Gizmos.DrawWireSphere(start, .2f);
-
-                // Draw connection type
-                if (i < CurrentPath.Count - 1)
-                {
-                    PathNode.PathNodeConnection conn = GetConnection(i, i + 1);
-                    if (conn != null)
-                    {
-                        switch (conn.ConnType)
-                        {
-                            case PathNode.ConnectionType.WALK:
-                                Gizmos.color = Color.green;
-                                break;
-                            case PathNode.ConnectionType.FALL:
-                                Gizmos.color = Color.yellow;
-                                break;
-                            case PathNode.ConnectionType.JUMP:
-                                Gizmos.color = Color.red;
-                                break;
-                        }
-                        Gizmos.DrawLine(start, end);
-                    }
-                }
-            }
-
-            // Draw the target node
-            Gizmos.color = Color.blue;
-            Gizmos.DrawWireSphere(CurrentPath.Last().Pos.ToVector3(offset: .5f), .2f);
-        }
-
-        // Draw the current target
-        if (CurrentTargetNode != null)
-        {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(CurrentTargetNode.Pos.ToVector3(offset: .5f), .3f);
-        }
-
-        // Draw ground check rays
-        Gizmos.color = Color.cyan;
-        if (_boxCollider != null)
-        {
-            Vector2 bottomLeft = new Vector2(_boxCollider.bounds.min.x + 0.1f, _boxCollider.bounds.min.y);
-            Vector2 bottomRight = new Vector2(_boxCollider.bounds.max.x - 0.1f, _boxCollider.bounds.min.y);
-            Vector2 bottomCenter = new Vector2(_boxCollider.bounds.center.x, _boxCollider.bounds.min.y);
-
-            Gizmos.DrawRay(bottomLeft, Vector2.down * _groundedCheckDistance);
-            Gizmos.DrawRay(bottomCenter, Vector2.down * _groundedCheckDistance);
-            Gizmos.DrawRay(bottomRight, Vector2.down * _groundedCheckDistance);
-        }
     }
 }

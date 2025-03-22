@@ -97,6 +97,7 @@ GameObject:
   - component: {fileID: 1686755206888159584}
   - component: {fileID: 8935895608674439048}
   - component: {fileID: 7120112579346763114}
+  - component: {fileID: 8471743469952932905}
   m_Layer: 12
   m_Name: Atiki
   m_TagString: Untagged
@@ -133,8 +134,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _art: {fileID: 4320002883129286161}
-  _maxHealth: 10
+  _maxHealth: 30
   CurrentHealth: 0
+  _damageOnCollision: 0
+  _damage: 0
   GridPos: {x: 0, y: 0}
   _pathNodeReachDistance: 0.1
   _reachedTarget: 0
@@ -195,7 +198,7 @@ BoxCollider2D:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
   m_LayerOverridePriority: 0
   m_ForceSendLayers:
     serializedVersion: 2
@@ -246,3 +249,48 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!61 &8471743469952932905
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6841732817586804886}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 6200000, guid: 57e61f683d8cd984f88f7c5a803d1b05, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: -0.0078006685, y: -0.12289047}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 0.38439864, y: 0.75421906}
+  m_EdgeRadius: 0

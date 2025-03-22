@@ -22,7 +22,7 @@ public abstract class Entity : MonoBehaviour
         _blinkMaterial = Resources.Load<Material>("BlinkMat");
     }
 
-    public void TakeDamage(int damage, DamageSource sourceType)
+    public virtual void TakeDamage(int damage, DamageSource sourceType, Transform sourcePos = null)
     {
         CurrentHealth -= damage;
         OnTakeDamage(sourceType);

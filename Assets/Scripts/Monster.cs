@@ -10,6 +10,9 @@ public abstract class Monster : Entity, IChunkObject
     public abstract float MovementSpeed { get; protected set; }
     public abstract float JumpPower { get; protected set; }
 
+    [SerializeField] protected bool _damageOnCollision;
+    [SerializeField] protected int _damage;
+
     public abstract MonsterState _currentState { get; set; }
     public abstract MonsterIdleState _idleState { get; set; }
     public abstract MonsterJumpingState _jumpState { get; set; }
@@ -80,6 +83,12 @@ public abstract class Monster : Entity, IChunkObject
     public abstract void PerformJump(Vector2 targetPosition);
     public abstract void MaintainJumpMovement(Vector2 targetPosition);
     public abstract bool ShouldRecalculatePath();
+
+    public override void OnTakeDamage(DamageSource sourceType)
+    {
+        base.OnTakeDamage(sourceType);
+        AudioManager.Instance.PlayMonsterDamage();
+    }
 
     public void Flip()
     {
@@ -180,7 +189,7 @@ public abstract class Monster : Entity, IChunkObject
         }
 
         _currentState = newState;
-        _currentState.Enter();
+        _currentState?.Enter();
     }
 
     public PathNode.PathNodeConnection GetConnection(int fromIndex, int toIndex)
@@ -210,6 +219,15 @@ public abstract class Monster : Entity, IChunkObject
         else
         {
             return new PathNode.PathNodeConnection(PathNode.ConnectionType.WALK, toNode, -1f);
+        }
+    }
+
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (!_damageOnCollision) return;
+        if(collision.gameObject.CompareTag("Player"))
+        {
+            _player.TakeDamage(_damage, DamageSource.Default, transform);
         }
     }
 }

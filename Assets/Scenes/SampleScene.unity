@@ -364,6 +364,9 @@ MonoBehaviour:
   _fallDamage:
     Clip: {fileID: 8300000, guid: 0e9e04287bf1ed64da3198561e5ac8bf, type: 3}
     Volume: 0.5
+  _monsterDamage:
+    Clip: {fileID: 8300000, guid: 3bd6e0533ebaff04f9031a0f14d809e5, type: 3}
+    Volume: 0.5
 --- !u!114 &94410022
 MonoBehaviour:
   m_ObjectHideFlags: 0

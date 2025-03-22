@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using static AudioManager;
 
-public class Pike : Item, IWeapon
+public class Pike : Item, IWeapon, IDamageColliderReceiver
 {
     [SerializeField] private int _damage;
     [SerializeField] private SFX _whooshAudio;
@@ -75,5 +75,14 @@ public class Pike : Item, IWeapon
     public void OnDisable()
     {
         _canAttack = true;
+    }
+
+    public void Receive(GameObject collider)
+    {
+        if (_canAttack) return;
+        if (collider.TryGetComponent(out Entity entity))
+        {
+            entity.TakeDamage(_damage, DamageSource.Weapon);
+        }
     }
 }

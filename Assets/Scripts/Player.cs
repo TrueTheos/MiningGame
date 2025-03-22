@@ -29,6 +29,9 @@ public class Player : Entity
     public int CurrentDangerousTemperature = 50;
 
     private WorldManager _worldManager;
+    private Collider2D _collider;
+
+    private bool _canTakeDamage = true;
 
     protected override void Awake()
     {
@@ -36,6 +39,7 @@ public class Player : Entity
         Instance = this;
         _rb = GetComponent<Rigidbody2D>();
         _playerMovement = GetComponent<PlayerMovement>();
+        _collider = GetComponent<Collider2D>();
 
         CurrentHealth = _maxHealth;
     }
@@ -55,15 +59,42 @@ public class Player : Entity
         Movement.StatModifiers.Remove(modifierId);
     }
 
-    public override void OnTakeDamage(DamageSource sourceType)
+    public override void TakeDamage(int damage, DamageSource sourceType, Transform sourcePos = null)
     {
-        Movement.Anim.SetTrigger("Hurt");
         if (sourceType == DamageSource.Fall)
         {
-            List<float> forces = new() { -.2f, .2f};
+            List<float> forces = new() { -.2f, .2f };
             GetComponent<CinemachineImpulseSource>().GenerateImpulseWithVelocity(new(forces.Random(), forces.Random(), 0));
             AudioManager.Instance.PlayFallDamage();
         }
-        //Blink();
+        else if(sourceType == DamageSource.Default)
+        {
+            if (!_canTakeDamage) return;
+            StartCoroutine(IgnoreMonsterCollision());
+            if(sourcePos != null)
+            {
+                Vector2 knockbackDirection = ((Vector2)transform.position - (Vector2)sourcePos.position).normalized;
+                knockbackDirection *= 5f;
+                knockbackDirection += Vector2.up * 5f;
+
+
+                _playerMovement.AddForce(knockbackDirection, 0.25f);
+            }
+            AudioManager.Instance.PlayMonsterDamage();
+        }
+       
+        base.TakeDamage(damage, sourceType);
+    }
+
+    public override void OnTakeDamage(DamageSource sourceType)
+    {
+        Movement.Anim.SetTrigger("Hurt");
+    }
+
+    private IEnumerator IgnoreMonsterCollision()
+    {
+        _canTakeDamage = false;
+        yield return new WaitForSeconds(.75f);
+        _canTakeDamage = true;
     }
 }
