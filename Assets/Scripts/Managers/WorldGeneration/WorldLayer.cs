@@ -2,6 +2,7 @@ using Assets.Scripts.Managers.WorldGeneration;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public abstract class WorldLayer : MonoBehaviour
 {
@@ -13,6 +14,8 @@ public abstract class WorldLayer : MonoBehaviour
 
     protected WorldManager _worldManager;
     protected WorldGenerator _worldGenerator;
+
+    [SerializeField] protected GameObject _background;
 
     private Vector2Int[] _sixDirections =
 {
@@ -32,6 +35,12 @@ public abstract class WorldLayer : MonoBehaviour
         _startY = startY;
         _endY = startY + Height;
         _width = _worldManager.WorldWidth;
+
+        if (_background != null)
+        {
+            _background.transform.localScale = new Vector3(_width / 64, Height / 64, 1);
+            _background.transform.localPosition = new Vector3(_width / 2f, _startY + Height / 2f, 0);
+        }
         StartCoroutine(GenerateLayer());
     }
 

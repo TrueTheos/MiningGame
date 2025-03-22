@@ -73,10 +73,15 @@ public class Player : Entity
             StartCoroutine(IgnoreMonsterCollision());
             if(sourcePos != null)
             {
-                Vector2 knockbackDirection = ((Vector2)transform.position - (Vector2)sourcePos.position).normalized;
+                Vector2 knockbackDirection = Vector2.right;
+
+                if (sourcePos.position.x < transform.position.x)
+                {
+                    knockbackDirection = Vector2.left;
+                }
+
                 knockbackDirection *= 5f;
                 knockbackDirection += Vector2.up * 5f;
-
 
                 _playerMovement.AddForce(knockbackDirection, 0.25f);
             }

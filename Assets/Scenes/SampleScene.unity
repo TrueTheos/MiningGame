@@ -11226,7 +11226,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1742909138}
   m_Father: {fileID: 89504957}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &713915305
@@ -11242,6 +11243,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Height: 256
+  _background: {fileID: 1742909136}
   _terrainHeightMultiplier: 10
   _terrainSmoothness: 0.1
   _perlinCaveThreshold: 0.55
@@ -11811,6 +11813,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Height: 256
+  _background: {fileID: 0}
   _baseTile: {fileID: 11400000, guid: b6b97ac716d46194f86eb4aad0872cba, type: 2}
 --- !u!1 &1166168223
 GameObject:
@@ -13353,12 +13356,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1742909136}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 128, y: 128, z: 0}
-  m_LocalScale: {x: 4, y: 4, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 713915304}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1800762242
 GameObject:
@@ -14153,5 +14156,4 @@ SceneRoots:
   - {fileID: 1585345595}
   - {fileID: 652461493}
   - {fileID: 756498290}
-  - {fileID: 1742909138}
   - {fileID: 1661687930}
