@@ -13,18 +13,18 @@ public abstract class Monster : Entity, IChunkObject
     [SerializeField] protected bool _damageOnCollision;
     [SerializeField] protected int _damage;
 
-    public abstract MonsterState _currentState { get; set; }
-    public abstract MonsterIdleState _idleState { get; set; }
-    public abstract MonsterJumpingState _jumpState { get; set; }
-    public abstract MonsterFollowingPathState _followPathState { get; set; }
+    [SerializeField] private LayerMask _detectionLayer;
 
-    public Vector2Int GridPos;
+    public Vector2Int GridPos => new Vector2Int(Mathf.FloorToInt(transform.position.x), Mathf.FloorToInt(transform.position.y));
 
     public int GridX => GridPos.x;
     public int GridY => GridPos.y;
 
     protected Player _player;
     protected Rigidbody2D _rb;
+    public Rigidbody2D RB => _rb;
+
+    private Animator _animator;
 
     protected bool _isFacingRight = true;
 
@@ -33,8 +33,8 @@ public abstract class Monster : Entity, IChunkObject
     #region Path
     [SerializeField] private float _pathNodeReachDistance = 0.5f;
     public float PathNodeReachDistance => _pathNodeReachDistance;
-    protected Dictionary<Vector2Int, PathNode> _nodes = new();
-    protected Dictionary<Vector2Int, PathNode> _edges = new();
+    public Dictionary<Vector2Int, PathNode> _nodes { set; get; } = new();
+    public Dictionary<Vector2Int, PathNode> _edges { set; get; } = new();
     protected float _pathRecalcCooldown = 0.5f;
     protected float _lastPathCalcTime = 0f;
     protected Vector2Int _currentTargetPos = Vector2Int.zero;
@@ -42,6 +42,10 @@ public abstract class Monster : Entity, IChunkObject
     public PathNode CurrentTargetNode { get; protected set; }
     public int CurrentPathIndex { get; protected set; }
     protected bool _isFollowingPath;
+    protected int _fallSearchLimit = 7;
+    protected int _jumpSearchRadius = 5;
+
+    protected bool _grounded;
     #endregion
 
     [Header("Debug")]
@@ -59,7 +63,7 @@ public abstract class Monster : Entity, IChunkObject
     protected override void Awake()
     {
         base.Awake();
-        UpdatePosition();
+        _animator = GetComponent<Animator>();
         _rb = GetComponent<Rigidbody2D>();
         CurrentHealth = _maxHealth;
     }
@@ -69,19 +73,17 @@ public abstract class Monster : Entity, IChunkObject
         _player = Player.Instance;
     }
 
-    protected void UpdatePosition()
+    public void UpdateGraph()
     {
-        GridPos = new Vector2Int(Mathf.FloorToInt(transform.position.x), Mathf.FloorToInt(transform.position.y));
+        MonsterController.Instance.CalculateGraph(this, _fallSearchLimit, _jumpSearchRadius);
     }
 
-    public Vector2Int GetPlayerPosition()
+    private void FixedUpdate()
     {
-        return _player != null ? _player.Pos : Vector2Int.zero;
+        _animator.SetFloat("horizontal", Mathf.Abs(_rb.velocity.x));
     }
 
     public abstract bool IsGrounded();
-    public abstract void PerformJump(Vector2 targetPosition);
-    public abstract void MaintainJumpMovement(Vector2 targetPosition);
     public abstract bool ShouldRecalculatePath();
 
     public override void OnTakeDamage(DamageSource sourceType)
@@ -151,6 +153,25 @@ public abstract class Monster : Entity, IChunkObject
         return closest;
     }
 
+    protected bool IsPlayerVisible(float range)
+    {
+        Vector2 directionToPlayer = (_player.transform.position - transform.position);
+        float distanceToPlayer = directionToPlayer.magnitude;
+
+        if (distanceToPlayer >= range) return false;
+
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, directionToPlayer.normalized, range, _detectionLayer);
+
+        if (hit.collider != null && hit.collider.gameObject.name == _player.gameObject.name)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     public bool FindPath()
     {
         if (_currentTargetPos == Vector2.zero) return false;
@@ -179,17 +200,6 @@ public abstract class Monster : Entity, IChunkObject
             _isFollowingPath = false;
             return false;
         }
-    }
-
-    public void ChangeState(MonsterState newState)
-    {
-        if (_currentState != null)
-        {
-            _currentState.Exit();
-        }
-
-        _currentState = newState;
-        _currentState?.Enter();
     }
 
     public PathNode.PathNodeConnection GetConnection(int fromIndex, int toIndex)

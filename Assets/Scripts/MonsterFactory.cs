@@ -36,6 +36,7 @@ public class MonsterFactory : MonoBehaviour
         {
             Monster result = Instantiate(prefab.gameObject, position, Quaternion.identity).GetComponent<Monster>();
             ChunkManager.Instance.AddObjectToChunk(result);
+            MonsterController.Instance.RegisterMonster(result);
             return result;
         }
         Debug.LogError($"Monster type {type} not found in factory!");
