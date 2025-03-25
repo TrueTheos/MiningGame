@@ -176,7 +176,7 @@ public class AtikiMonster : Monster
         }
         else
         {
-            float heightDiff = targetPosition.y - transform.position.y;
+            float heightDiff = targetPosition.y + .5f - transform.position.y;
 
             if (heightDiff > 0.5f)
             {
@@ -301,9 +301,13 @@ public class AtikiMonster : Monster
 
     private void FallState()
     {
-        if(IsGrounded())
+        PathNode currentTargetNode = CurrentPath.ElementAt(CurrentPathIndex);
+
+        float distToTarget = Vector2.Distance(transform.position, currentTargetNode.Pos + Vector2.one * 0.5f);
+
+        if (distToTarget < PathNodeReachDistance)
         {
-            ChangeState(AtikiState.Idle);
+            ChangeState(AtikiState.Follow);
             return;
         }
 
