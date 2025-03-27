@@ -7,6 +7,7 @@ public class MonsterController : MonoBehaviour
     public static MonsterController Instance;
 
     private int _margin = 20;
+    private int _graphRegenerationThreshold = 5;
 
     private WorldManager _worldManager;
 
@@ -20,11 +21,73 @@ public class MonsterController : MonoBehaviour
     private void Start()
     {
         _worldManager = WorldManager.Instance;
+
+        _worldManager.OnBlockBreak.AddListener(BlockChanged);
+        _worldManager.OnBlockPlace.AddListener(BlockChanged);
     }
 
     public void RegisterMonster(Monster monster)
     {
         _monsters.Add(monster);
+    }
+
+    public void MonsterMoved(Monster monster)
+    {
+        if (IsMonsterNearGraphBorder(monster))
+        {
+            RegenerateMonsterGraph(monster);
+        }
+    }
+
+    public void BlockChanged(int x, int y)
+    {
+        foreach (var monster in _monsters)
+        {
+            if (monster != null && monster.gameObject.activeSelf)
+            {
+                if (IsBlockInMonsterGraphRange(monster, x, y))
+                {
+                    RegenerateMonsterGraph(monster);
+                }
+            }
+        }
+    }
+
+    private bool IsBlockInMonsterGraphRange(Monster monster, int blockX, int blockY)
+    {
+        int startX = Mathf.Max(0, monster.GridX - _margin);
+        int startY = Mathf.Max(0, monster.GridY - _margin);
+
+        int endX = Mathf.Min(_worldManager.WorldWidth, monster.GridX + _margin);
+        int endY = Mathf.Min(_worldManager.WorldHeight, monster.GridY + _margin);
+
+        return blockX >= startX && blockX < endX &&
+               blockY >= startY && blockY < endY;
+    }
+
+    private bool IsMonsterNearGraphBorder(Monster monster)
+    {
+        int startX = Mathf.Max(0, monster.GridX - _margin);
+        int startY = Mathf.Max(0, monster.GridY - _margin);
+
+        int endX = Mathf.Min(_worldManager.WorldWidth, monster.GridX + _margin);
+        int endY = Mathf.Min(_worldManager.WorldHeight, monster.GridY + _margin);
+
+        // Check distance from current position to graph borders
+        int distanceFromLeftBorder = monster.GridX - startX;
+        int distanceFromRightBorder = endX - monster.GridX;
+        int distanceFromTopBorder = monster.GridY - startY;
+        int distanceFromBottomBorder = endY - monster.GridY;
+
+        return distanceFromLeftBorder <= _graphRegenerationThreshold ||
+               distanceFromRightBorder <= _graphRegenerationThreshold ||
+               distanceFromTopBorder <= _graphRegenerationThreshold ||
+               distanceFromBottomBorder <= _graphRegenerationThreshold;
+    }
+
+    private void RegenerateMonsterGraph(Monster monster)
+    {
+        CalculateGraph(monster, monster.FallSearchLimit, monster.JumpSearchRadius);
     }
 
     public void CalculateGraph(Monster monster, int _fallSearchLimit, int _jumpSearchRadius)

@@ -15,7 +15,7 @@ public abstract class Monster : Entity, IChunkObject
 
     [SerializeField] private LayerMask _detectionLayer;
 
-    public Vector2Int GridPos => new Vector2Int(Mathf.FloorToInt(transform.position.x), Mathf.FloorToInt(transform.position.y));
+    public Vector2Int GridPos;
 
     public int GridX => GridPos.x;
     public int GridY => GridPos.y;
@@ -42,14 +42,16 @@ public abstract class Monster : Entity, IChunkObject
     public PathNode CurrentTargetNode { get; protected set; }
     public int CurrentPathIndex { get; protected set; }
     protected bool _isFollowingPath;
-    protected int _fallSearchLimit = 7;
-    protected int _jumpSearchRadius = 5;
+    public int FallSearchLimit { private set; get; } = 7;
+    public int JumpSearchRadius { private set; get; } = 5;
 
     protected bool _grounded;
     #endregion
 
     [Header("Debug")]
     [SerializeField] private bool _reachedTarget;
+
+    private MonsterController _monsterController;
 
     public Vector2 Position
     {
@@ -71,16 +73,32 @@ public abstract class Monster : Entity, IChunkObject
     protected virtual void Start()
     {
         _player = Player.Instance;
+        _monsterController = MonsterController.Instance;
+     
+        UpdateGridPos();
     }
 
-    public void UpdateGraph()
+    private void UpdateGridPos()
     {
-        MonsterController.Instance.CalculateGraph(this, _fallSearchLimit, _jumpSearchRadius);
+        var lastPos = GridPos;
+        GridPos = new Vector2Int(Mathf.FloorToInt(transform.position.x), Mathf.FloorToInt(transform.position.y));
+
+        if(lastPos != GridPos)
+        {
+            _monsterController.MonsterMoved(this);
+        }
+    }
+
+    protected void UpdateGraph()
+    {
+        MonsterController.Instance.CalculateGraph(this, FallSearchLimit, JumpSearchRadius);
     }
 
     private void FixedUpdate()
     {
+        UpdateGridPos();
         _animator.SetFloat("horizontal", Mathf.Abs(_rb.velocity.x));
+        Flip();
     }
 
     public abstract bool IsGrounded();
@@ -92,16 +110,23 @@ public abstract class Monster : Entity, IChunkObject
         AudioManager.Instance.PlayMonsterDamage();
     }
 
-    public void Flip()
+    private void Flip()
     {
-        if ((_rb.velocity.x > 0.1f && !_isFacingRight) ||
-            (_rb.velocity.x < -0.1f && _isFacingRight))
+        Vector3 localScale;
+        if (_currentTargetPos.x > transform.position.x)
         {
-            _isFacingRight = !_isFacingRight;
-            Vector3 localScale = transform.localScale;
-            localScale.x *= -1f;
-            transform.localScale = localScale;
+            localScale = transform.localScale;
+            localScale.x = 1;
+            _isFacingRight = true;
         }
+        else
+        {
+            localScale = transform.localScale;
+            localScale.x = -1;
+            _isFacingRight = false;
+        }
+
+        transform.localScale = localScale;
     }
 
     public void SetCurrentTargetNode(PathNode node)

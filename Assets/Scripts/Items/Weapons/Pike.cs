@@ -17,6 +17,8 @@ public class Pike : Item, IWeapon, IDamageColliderReceiver
     private Vector3 _defaultRotation;
     private Vector3 _defaultArtRotation;
 
+    private HashSet<Entity> _hitMonsters;
+
     private void Start()
     {
         _animation = GetComponent<Animation>();
@@ -29,6 +31,7 @@ public class Pike : Item, IWeapon, IDamageColliderReceiver
     public override void UseOnce()
     {
         if (!_canAttack) return;
+        _hitMonsters = new();
         StartCoroutine(Attack());
         AudioManager.Instance.Play(_whooshAudio);
 
@@ -82,6 +85,8 @@ public class Pike : Item, IWeapon, IDamageColliderReceiver
         if (_canAttack) return;
         if (collider.TryGetComponent(out Entity entity))
         {
+            if(_hitMonsters.Contains(entity)) return;
+            _hitMonsters.Add(entity);
             entity.TakeDamage(_damage, DamageSource.Weapon);
         }
     }

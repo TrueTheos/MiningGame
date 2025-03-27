@@ -52,26 +52,10 @@ public class AtikiMonster : Monster
         _currentTargetPos = Vector2Int.zero;
         _currentWanderCooldown = _wanderChangeTargetCooldown.Random();
         UpdateGraph();
-
-        _worldManager.OnBlockPlace.AddListener(UpdateGraph);
-        _worldManager.OnBlockBreak.AddListener(UpdateGraph);
     }
 
     public void Update()
     {
-        if (IsGrounded())
-        {
-            if (!_grounded)
-            {
-                FindPath();
-            }
-            _grounded = true;
-        }
-        else
-        {
-            _grounded = false;
-        }
-
         switch (_state)
         {
             case AtikiState.Idle:
@@ -93,10 +77,39 @@ public class AtikiMonster : Monster
                 FollowState();
                 break;
         }
+
+        if (ShouldRecalculatePath())
+        {
+            if (Enraged)
+            {
+                SetTargetPosition(Player.Instance.Pos);
+                FindPath();
+                UpdatePathCalculationTime();
+                ChangeState(AtikiState.Follow);
+            }
+            else
+            {
+                ChangeState(AtikiState.Wander);
+            }
+        }
+
+        if (IsGrounded())
+        {
+            if (!_grounded)
+            {
+                FindPath();
+            }
+            _grounded = true;
+        }
+        else
+        {
+            _grounded = false;
+        }
     }
 
     private void ChangeState(AtikiState newState)
     {
+   //     FindPath();
         _state = newState;
     }
 
@@ -108,38 +121,24 @@ public class AtikiMonster : Monster
 
     private void FollowState()
     {
-        if (Enraged)
+        /*if (ShouldRecalculatePath())
         {
-            if (ShouldRecalculatePath())
+            if (Enraged)
             {
                 SetTargetPosition(Player.Instance.Pos);
                 FindPath();
                 UpdatePathCalculationTime();
             }
-        }
-        else
-        {
-            if (ShouldUpdateWanderTarget())
+            else
             {
                 ChangeState(AtikiState.Wander);
                 return;
             }
-        }
-
-        if (ReachedTarget() || CurrentPath == null || CurrentPath.Count == 0 || CurrentPathIndex >= CurrentPath.Count)
-        {
-            ChangeState(AtikiState.Idle);
-            return;
-        }
-
-        if (CurrentPath == null || CurrentPath.Count == 0)
-        {
-            ChangeState(AtikiState.Idle);
-            return;
-        }
+        }*/
 
         int currentPathIndex = CurrentPathIndex;
-        if (currentPathIndex >= CurrentPath.Count)
+
+        if (ReachedTarget() || CurrentPath == null || CurrentPath.Count == 0 || CurrentPathIndex >= CurrentPath.Count)
         {
             ChangeState(AtikiState.Idle);
             return;
@@ -248,7 +247,7 @@ public class AtikiMonster : Monster
 
         PathNode currentTargetNode = CurrentPath.ElementAt(CurrentPathIndex);
 
-        float distToTarget = Vector2.Distance(transform.position, currentTargetNode.Pos + Vector2.one * 0.5f);
+        float distToTarget = Mathf.Abs(transform.position.x - currentTargetNode.Pos.x + .5f);
 
         if (distToTarget < PathNodeReachDistance)
         {
@@ -256,25 +255,30 @@ public class AtikiMonster : Monster
             return;
         }
 
-        float distanceToTarget = Mathf.Abs(_currentTargetPos.x + 0.5f - transform.position.x);
+      
         float direction = Mathf.Sign(_currentTargetPos.x + 0.5f - transform.position.x);
 
-        if (_grounded && (direction > 0) != (_rb.velocity.x > 0))
+        if (distToTarget > 0.1f)
         {
-            ChangeState(AtikiState.Idle);
-            return;
-        }
-
-        if (distanceToTarget > 0.1f)
-        {
-            float speedMultiplier = Mathf.Min(1.0f, distanceToTarget / 0.5f);
+            float speedMultiplier = Mathf.Min(1.0f, distToTarget / 0.5f);
             _rb.velocity = new Vector2(direction * MovementSpeed * speedMultiplier, _rb.velocity.y);
         }
         else
         {
             _rb.velocity = new Vector2(0, _rb.velocity.y);
         }
-        Flip();
+
+
+        if (_grounded)
+        {
+            if ((direction > 0) != (_rb.velocity.x > 0) ||
+                (direction < 0) != (_rb.velocity.x < 0))
+            {
+                ChangeState(AtikiState.Idle);
+                return;
+            }
+        }
+
     }
 
     private void JumpState()
@@ -301,6 +305,12 @@ public class AtikiMonster : Monster
 
     private void FallState()
     {
+        if(CurrentPath == null || CurrentPath.Count == 0)
+        {
+            ChangeState(AtikiState.Idle);
+            return;
+        }
+
         PathNode currentTargetNode = CurrentPath.ElementAt(CurrentPathIndex);
 
         float distToTarget = Vector2.Distance(transform.position, currentTargetNode.Pos + Vector2.one * 0.5f);
@@ -313,10 +323,17 @@ public class AtikiMonster : Monster
 
         float direction = Mathf.Sign(_currentTargetPos.x + 0.5f - transform.position.x);
 
-        if (!_grounded && (direction > 0) != (_rb.velocity.x > 0)) return;
-
         _rb.velocity = new Vector2(direction * MovementSpeed, _rb.velocity.y);
-        Flip();
+
+        if (_grounded)
+        {
+            if ((direction > 0) != (_rb.velocity.x > 0) ||
+                (direction < 0) != (_rb.velocity.x < 0))
+            {
+                ChangeState(AtikiState.Idle);
+                return;
+            }
+        }
     }
 
     public void Enrage()
@@ -356,6 +373,13 @@ public class AtikiMonster : Monster
     public override void OnTakeDamage(DamageSource sourceType)
     {
         base.OnTakeDamage(sourceType);
+
+        Vector2 hitDirection = (transform.position - Player.Instance.transform.position).normalized;
+        float knockbackForceX = 5f;
+        float knockbackForceY = 5f;
+
+        _rb.AddForce(new Vector2(hitDirection.x * knockbackForceX, knockbackForceY), ForceMode2D.Impulse);
+
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, _enrageOtherMonstersRadius, gameObject.layer);
         List<GameObject> monsters = new List<GameObject>();
 
@@ -383,7 +407,7 @@ public class AtikiMonster : Monster
         if (Enraged)
         {
             // Player moved significantly
-            if (Vector2Int.Distance(_player.Pos, _currentTargetPos) > 1)
+            if (CurrentPath != null && Vector2Int.Distance(_player.Pos, CurrentPath.Last().Pos) > 1)
                 return true;
 
             // Regular recalculation interval

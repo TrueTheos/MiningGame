@@ -34,8 +34,8 @@ public class WorldManager : MonoBehaviour
     [SerializeField] private CinemachineConfiner2D _camConfiner;
 
     public UnityEvent OnWorldReady;
-    public UnityEvent OnBlockPlace;
-    public UnityEvent OnBlockBreak;
+    public UnityEvent<int, int> OnBlockPlace;
+    public UnityEvent<int, int> OnBlockBreak;
 
     public const int CHUNK_SIZE = 32;
     public readonly int RENDER_DISTANCE_CHUNKS = 1; //in each direction
@@ -393,6 +393,8 @@ public class WorldManager : MonoBehaviour
             building.OnBreak();
         }
 
+        OnBlockBreak?.Invoke(x, y);
+
         CaveReverbManager.Instance.RecalculateZone(x, y);
     }
 
@@ -424,6 +426,8 @@ public class WorldManager : MonoBehaviour
         newBuilding.OnPlace(x,y);
         newBuilding.Pos = new Vector2Int(x, y);
         CaveReverbManager.Instance.RecalculateZone(x, y);
+
+        OnBlockPlace?.Invoke(x, y);
 
         UpdatePathNodeAt(x, y);
         UpdatePathNodeAt(x, y + 1);
