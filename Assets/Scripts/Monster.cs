@@ -152,8 +152,16 @@ public abstract class Monster : Entity, IChunkObject
 
     public bool ReachedTarget()
     {
-        _reachedTarget = Vector2.Distance(transform.position, _currentTargetPos.ToVector3(offset: .5f)) < _pathNodeReachDistance;
-        return _reachedTarget;
+        if (CurrentPath == null || CurrentPath.Count == 0)
+            return true;
+
+        PathNode finalTargetNode = CurrentPath.Last();
+        float distanceToFinalTarget = Vector2.Distance(
+            transform.position,
+            finalTargetNode.Pos + Vector2.one * 0.5f
+        );
+
+        return distanceToFinalTarget < PathNodeReachDistance;
     }
 
     public void SetTargetPosition(Vector2Int targetPos)

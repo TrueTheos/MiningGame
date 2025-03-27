@@ -56,6 +56,21 @@ public class AtikiMonster : Monster
 
     public void Update()
     {
+        var lastState = _state;
+
+        if (IsGrounded())
+        {
+            if (!_grounded)
+            {
+                FindPath();
+            }
+            _grounded = true;
+        }
+        else
+        {
+            _grounded = false;
+        }
+
         switch (_state)
         {
             case AtikiState.Idle:
@@ -78,7 +93,7 @@ public class AtikiMonster : Monster
                 break;
         }
 
-        if (ShouldRecalculatePath())
+        if (lastState == _state && ShouldRecalculatePath())
         {
             if (Enraged)
             {
@@ -92,19 +107,6 @@ public class AtikiMonster : Monster
                 ChangeState(AtikiState.Wander);
             }
         }
-
-        if (IsGrounded())
-        {
-            if (!_grounded)
-            {
-                FindPath();
-            }
-            _grounded = true;
-        }
-        else
-        {
-            _grounded = false;
-        }
     }
 
     private void ChangeState(AtikiState newState)
@@ -115,13 +117,18 @@ public class AtikiMonster : Monster
 
     private void IdleState()
     {
-        if(Enraged) ChangeState(AtikiState.Follow);
+        if (Enraged)
+        {
+            SetTargetPosition(Player.Instance.Pos);
+            FindPath();
+            ChangeState(AtikiState.Follow);
+        }
         else ChangeState(AtikiState.Wander);
     }
 
     private void FollowState()
     {
-        /*if (ShouldRecalculatePath())
+        if (ShouldRecalculatePath())
         {
             if (Enraged)
             {
@@ -134,7 +141,7 @@ public class AtikiMonster : Monster
                 ChangeState(AtikiState.Wander);
                 return;
             }
-        }*/
+        }
 
         int currentPathIndex = CurrentPathIndex;
 
@@ -239,6 +246,26 @@ public class AtikiMonster : Monster
 
     private void WalkState()
     {
+        if (Enraged)
+        {
+            if (_player.Pos.y == GridPos.y)
+            {
+                float dist = Mathf.Abs(transform.position.x - _player.transform.position.x);
+                if (dist < 7)
+                {
+                    float dir = Mathf.Sign(_player.transform.position.x - transform.position.x);
+
+                    float speedMultiplier = Mathf.Min(1.0f, dist / 0.5f);
+                    _rb.velocity = new Vector2(dir * MovementSpeed * speedMultiplier, _rb.velocity.y);
+
+                    SetTargetPosition(Player.Instance.Pos);
+                    FindPath();
+                    UpdatePathCalculationTime();
+                    return;
+                }
+            }
+        }
+
         if (CurrentPath == null || CurrentPath.Count == 0)
         {
             ChangeState(AtikiState.Idle);
@@ -251,12 +278,19 @@ public class AtikiMonster : Monster
 
         if (distToTarget < PathNodeReachDistance)
         {
-            ChangeState(AtikiState.Follow);
-            return;
-        }
+            IncrementPathIndex();
 
+            if (CurrentPathIndex >= CurrentPath.Count)
+            {
+                ChangeState(AtikiState.Idle);
+                return;
+            }
+
+            currentTargetNode = CurrentPath.ElementAt(CurrentPathIndex);
+            distToTarget = Mathf.Abs(transform.position.x - currentTargetNode.Pos.x + .5f);
+        }
       
-        float direction = Mathf.Sign(_currentTargetPos.x + 0.5f - transform.position.x);
+        float direction = Mathf.Sign(currentTargetNode.Pos.x + 0.5f - transform.position.x);
 
         if (distToTarget > 0.1f)
         {
@@ -278,7 +312,6 @@ public class AtikiMonster : Monster
                 return;
             }
         }
-
     }
 
     private void JumpState()

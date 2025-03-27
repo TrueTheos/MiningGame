@@ -503,6 +503,7 @@ public class WorldManager : MonoBehaviour
             SetTile(x, y, tile.Tile);
             AudioManager.Instance.PlayPlace();
             CaveReverbManager.Instance.RecalculateZone(x, y);
+            OnBlockPlace?.Invoke(x, y);
             return true;
         }
     }
