@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class AtikiMonster : Monster
@@ -20,20 +21,13 @@ public class AtikiMonster : Monster
     [SerializeField] private float _edgeCheckDistance = 0.5f;
     [SerializeField] private LayerMask _groundLayer;
     [SerializeField] private float _targetDetectionRange;
-
-    [Header("Wander Settings")]
     [SerializeField] private float _enrageOtherMonstersRadius;
-    [SerializeField] private int _wanderSearchNodeRadius;
-    [SerializeField] private Vector2 _wanderChangeTargetCooldown;
-    private float _lastWanderTargetChange = 0f;
-    private float _currentWanderCooldown;
+
     public bool Enraged { get; private set; }
 
     #region State Machine
     public override MonsterType Type => MonsterType.Atiki;
     #endregion
-
-    private Vector2 _targetJumpPosition;
 
     private enum AtikiState { Idle, Wander, Walk, Jump, Fall, Follow }
     private AtikiState _state;
@@ -49,20 +43,52 @@ public class AtikiMonster : Monster
         base.Start();
         _damageOnCollision = false; 
         _worldManager = WorldManager.Instance;
-        _currentTargetPos = Vector2Int.zero;
-        _currentWanderCooldown = _wanderChangeTargetCooldown.Random();
         UpdateGraph();
     }
 
+    private Queue<PathNode> _previousPath;
+
+    private bool IsPathEndingSimilar(Queue<PathNode> newPath, Queue<PathNode> oldPath)
+    {
+        if (newPath == null || oldPath == null) return false;
+
+        if(newPath.Count == 0 || oldPath.Count == 0) return false;
+
+        // Get the last few nodes from both paths
+        newPath.Dequeue();
+        oldPath.Dequeue();
+        var newPathEnd = newPath.ToList();
+        var oldPathEnd = oldPath.ToList();
+
+        // Compare the ends of the paths
+        if (newPathEnd.Count != oldPathEnd.Count) return false;
+
+        for (int i = 0; i < newPathEnd.Count; i++)
+        {
+            if (newPathEnd[i].Pos != oldPathEnd[i].Pos)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool jumping;
+
+    private Vector2Int _lastTargetPos;
+
+    private float lastCheck;
+
     public void Update()
     {
-        var lastState = _state;
-
         if (IsGrounded())
         {
             if (!_grounded)
             {
-                FindPath();
+                jumping = false;
+                FindPath(_player.Pos);
+                _lastTargetPos = _player.Pos;
             }
             _grounded = true;
         }
@@ -71,325 +97,131 @@ public class AtikiMonster : Monster
             _grounded = false;
         }
 
-        switch (_state)
+        /*if(lastCheck + 2f < Time.time)
         {
-            case AtikiState.Idle:
-                IdleState();
-                break;
-            case AtikiState.Wander:
-                WanderState();
-                break;
-            case AtikiState.Walk:
-                WalkState();
-                break;
-            case AtikiState.Jump:
-                JumpState();
-                break;
-            case AtikiState.Fall:
-                FallState();
-                break;
-            case AtikiState.Follow:
-                FollowState();
-                break;
+            lastCheck = Time.time;
+            FindPath(_player.Pos);
+            _lastTargetPos = _player.Pos;
+        }*/
+
+        if (CurrentPath == null || (CurrentPath != null && CurrentPath.Count == 0) || _lastTargetPos == null || Vector2Int.Distance(_lastTargetPos, _player.Pos) > 1f)
+        {
+            FindPath(_player.Pos);
+            _lastTargetPos = _player.Pos;
         }
 
-        if (lastState == _state && ShouldRecalculatePath())
+        if (CurrentPath != null && CurrentPath.Count > 0)
         {
-            if (Enraged)
-            {
-                SetTargetPosition(Player.Instance.Pos);
-                FindPath();
-                UpdatePathCalculationTime();
-                ChangeState(AtikiState.Follow);
-            }
-            else
-            {
-                ChangeState(AtikiState.Wander);
-            }
+            FollowPath();
         }
     }
 
-    private void ChangeState(AtikiState newState)
+    private Vector2 currentGoal;
+    private Vector2Int nodePos;
+
+    private void FollowPath()
     {
-   //     FindPath();
-        _state = newState;
-    }
-
-    private void IdleState()
-    {
-        if (Enraged)
+        if(jumping)
         {
-            SetTargetPosition(Player.Instance.Pos);
-            FindPath();
-            ChangeState(AtikiState.Follow);
-        }
-        else ChangeState(AtikiState.Wander);
-    }
-
-    private void FollowState()
-    {
-        if (ShouldRecalculatePath())
-        {
-            if (Enraged)
-            {
-                SetTargetPosition(Player.Instance.Pos);
-                FindPath();
-                UpdatePathCalculationTime();
-            }
-            else
-            {
-                ChangeState(AtikiState.Wander);
-                return;
-            }
-        }
-
-        int currentPathIndex = CurrentPathIndex;
-
-        if (ReachedTarget() || CurrentPath == null || CurrentPath.Count == 0 || CurrentPathIndex >= CurrentPath.Count)
-        {
-            ChangeState(AtikiState.Idle);
+            Jump();
             return;
         }
 
-        PathNode currentTargetNode = CurrentPath.ElementAt(currentPathIndex);
-        SetCurrentTargetNode(currentTargetNode);
-        Vector2Int targetPosition = currentTargetNode.Pos;
+        if (CurrentPath == null || CurrentPath.Count == 0) return;
 
-        float distToTarget = Vector2.Distance(transform.position, targetPosition + Vector2.one * 0.5f);
-
-        if (distToTarget < PathNodeReachDistance)
+        if(_player.Pos.y == GridPos.y && CurrentPath.All(x => x.Pos.y == GridPos.y))
         {
-            IncrementPathIndex();
-            currentPathIndex = CurrentPathIndex;
-
-            if (currentPathIndex >= CurrentPath.Count)
-            {
-                ChangeState(AtikiState.Idle);
-                return;
-            }
-
-            currentTargetNode = CurrentPath.ElementAt(currentPathIndex);
-            SetCurrentTargetNode(currentTargetNode);
-            targetPosition = currentTargetNode.Pos;
-            _currentTargetPos = targetPosition;
+            Walk(_player.transform.position);
+            return;
         }
 
-        PathNode.PathNodeConnection connection = null;
 
-        if (currentPathIndex > 0)
+        // Only update goal when significantly far from current goal
+        if (GridPos == nodePos && CurrentPath.Count > 0)
         {
-            connection = GetConnection(currentPathIndex - 1, currentPathIndex);
+            nodePos = CurrentPath.Dequeue().Pos;
+            currentGoal = nodePos.ToVector3(offset: .5f);
         }
         else
         {
-            float heightDiff = targetPosition.y + .5f - transform.position.y;
-
-            if (heightDiff > 0.5f)
+            if (CurrentPath.Count > 0)
             {
-                connection = new PathNode.PathNodeConnection(
-                PathNode.ConnectionType.JUMP,
-                currentTargetNode,
-                    JumpPower
-                );
-            }
-            else
-            {
-                connection = new PathNode.PathNodeConnection(
-                    heightDiff < -0.5f ? PathNode.ConnectionType.FALL : PathNode.ConnectionType.WALK,
-                    currentTargetNode,
-                    -1f
-                );
+                nodePos = CurrentPath.Peek().Pos;
+                currentGoal = nodePos.ToVector3(offset: .5f);
             }
         }
 
-        if (connection == null)
+        // More controlled movement between nodes
+        float distanceToGoal = Vector2.Distance(transform.position, currentGoal);
+        float direction = Mathf.Sign(currentGoal.x - transform.position.x);
+
+        if (nodePos.y > GridPos.y)
         {
-            FindPath();
-            return;
+            Jump();
         }
-
-        switch (connection.ConnType)
+        else if (nodePos.y < GridPos.y)
         {
-            case PathNode.ConnectionType.WALK:
-                ChangeState(AtikiState.Walk);
-                break;
-            case PathNode.ConnectionType.FALL:
-                ChangeState(AtikiState.Fall);
-                break;
-            case PathNode.ConnectionType.JUMP:
-                PerformJump(targetPosition);
-                ChangeState(AtikiState.Jump);
-                break;
-        }
-    }
-
-    private void WanderState()
-    {
-        if (ShouldUpdateWanderTarget())
-        {
-            UpdateWanderTargetTime();
-            List<Vector2Int> nodes = GetWanderTargets();
-
-            if (nodes == null || nodes.Count == 0)
-            {
-                ChangeState(AtikiState.Idle);
-            }
-            else
-            {
-                SetTargetPosition(GetWanderTargets().Random());
-                FindPath();
-
-                ChangeState(AtikiState.Follow);
-            }
-        }
-    }
-
-    private void WalkState()
-    {
-        if (Enraged)
-        {
-            if (_player.Pos.y == GridPos.y)
-            {
-                float dist = Mathf.Abs(transform.position.x - _player.transform.position.x);
-                if (dist < 7)
-                {
-                    float dir = Mathf.Sign(_player.transform.position.x - transform.position.x);
-
-                    float speedMultiplier = Mathf.Min(1.0f, dist / 0.5f);
-                    _rb.velocity = new Vector2(dir * MovementSpeed * speedMultiplier, _rb.velocity.y);
-
-                    SetTargetPosition(Player.Instance.Pos);
-                    FindPath();
-                    UpdatePathCalculationTime();
-                    return;
-                }
-            }
-        }
-
-        if (CurrentPath == null || CurrentPath.Count == 0)
-        {
-            ChangeState(AtikiState.Idle);
-            return;
-        }
-
-        PathNode currentTargetNode = CurrentPath.ElementAt(CurrentPathIndex);
-
-        float distToTarget = Mathf.Abs(transform.position.x - currentTargetNode.Pos.x + .5f);
-
-        if (distToTarget < PathNodeReachDistance)
-        {
-            IncrementPathIndex();
-
-            if (CurrentPathIndex >= CurrentPath.Count)
-            {
-                ChangeState(AtikiState.Idle);
-                return;
-            }
-
-            currentTargetNode = CurrentPath.ElementAt(CurrentPathIndex);
-            distToTarget = Mathf.Abs(transform.position.x - currentTargetNode.Pos.x + .5f);
-        }
-      
-        float direction = Mathf.Sign(currentTargetNode.Pos.x + 0.5f - transform.position.x);
-
-        if (distToTarget > 0.1f)
-        {
-            float speedMultiplier = Mathf.Min(1.0f, distToTarget / 0.5f);
-            _rb.velocity = new Vector2(direction * MovementSpeed * speedMultiplier, _rb.velocity.y);
+            Fall();
         }
         else
         {
-            _rb.velocity = new Vector2(0, _rb.velocity.y);
+            Walk(currentGoal);
         }
+    }
 
+    private void Walk(Vector2 target)
+    {
+        float distanceToTarget = Mathf.Abs(target.x - transform.position.x);
+        float direction = Mathf.Sign(target.x - transform.position.x);
 
+        float speedMultiplier = Mathf.Min(1.0f, distanceToTarget / 0.5f);
+        _rb.velocity = new Vector2(direction * MovementSpeed * speedMultiplier, _rb.velocity.y);
+    }
+
+    private float jumpDir = 0;
+
+    private void Jump()
+    {
         if (_grounded)
         {
-            if ((direction > 0) != (_rb.velocity.x > 0) ||
-                (direction < 0) != (_rb.velocity.x < 0))
-            {
-                ChangeState(AtikiState.Idle);
-                return;
-            }
+            jumping = true;
+            float jumpDirection = Mathf.Sign(currentGoal.x - transform.position.x);
+            jumpDir = jumpDirection;
+
+            // More controlled jump with consistent horizontal movement
+            _rb.velocity = new Vector2(
+                jumpDir * MovementSpeed,
+                _jumpPower
+            );
+        }
+        else
+        {
+            // Maintain horizontal momentum during jump
+            _rb.velocity = new Vector2(
+                jumpDir * MovementSpeed,
+                _rb.velocity.y
+            );
         }
     }
 
-    private void JumpState()
+    private float fallDir = 0;
+
+    private void Fall()
     {
-        Vector2 targetPosWithOffset = _targetJumpPosition + Vector2.one * 0.5f;
-
-        if (Vector2.Distance(transform.position, targetPosWithOffset) < PathNodeReachDistance ||
-        Time.time - JumpStartTime > 2.0f ||
-            (IsGrounded() && Time.time - JumpStartTime > 0.2f))
+        if(_grounded)
         {
-            ChangeState(AtikiState.Idle);
+            fallDir = Mathf.Sign(currentGoal.x - transform.position.x);
         }
 
-        float distanceToTarget = targetPosWithOffset.x - transform.position.x;
-        float direction = Mathf.Sign(distanceToTarget);
-
-        // For short jumps, maintain full speed to ensure we reach the target
-        float speedMultiplier = (Vector2.Distance(transform.position, targetPosWithOffset) < 1.5f)
-            ? 1.0f
-            : Mathf.Min(1.0f, Mathf.Abs(distanceToTarget) / 0.5f);
-
-        _rb.velocity = new Vector2(direction * _moveSpeed * speedMultiplier, _rb.velocity.y);
+        _rb.velocity = new Vector2(fallDir * MovementSpeed, _rb.velocity.y);
     }
 
-    private void FallState()
-    {
-        if(CurrentPath == null || CurrentPath.Count == 0)
-        {
-            ChangeState(AtikiState.Idle);
-            return;
-        }
-
-        PathNode currentTargetNode = CurrentPath.ElementAt(CurrentPathIndex);
-
-        float distToTarget = Vector2.Distance(transform.position, currentTargetNode.Pos + Vector2.one * 0.5f);
-
-        if (distToTarget < PathNodeReachDistance)
-        {
-            ChangeState(AtikiState.Follow);
-            return;
-        }
-
-        float direction = Mathf.Sign(_currentTargetPos.x + 0.5f - transform.position.x);
-
-        _rb.velocity = new Vector2(direction * MovementSpeed, _rb.velocity.y);
-
-        if (_grounded)
-        {
-            if ((direction > 0) != (_rb.velocity.x > 0) ||
-                (direction < 0) != (_rb.velocity.x < 0))
-            {
-                ChangeState(AtikiState.Idle);
-                return;
-            }
-        }
-    }
-
+  
     public void Enrage()
     {
         if (Enraged) return;
         _damageOnCollision = true;
         Enraged = true;
-        SetTargetPosition(Player.Instance.Pos);
-        FindPath();
-        UpdatePathCalculationTime();
-
-        ChangeState(AtikiState.Follow);
-    }
-
-    public void PerformJump(Vector2 targetPosition)
-    {
-        _targetJumpPosition = targetPosition;
-        JumpStartTime = Time.time;
-
-        _rb.velocity = new Vector2(
-            Mathf.Sign(targetPosition.x + 0.5f - transform.position.x) * _moveSpeed,
-            _jumpPower
-        );
     }
 
     public override bool IsGrounded()
@@ -434,52 +266,14 @@ public class AtikiMonster : Monster
             }
         }
     }
-
-    public override bool ShouldRecalculatePath()
-    {
-        if (Enraged)
-        {
-            // Player moved significantly
-            if (CurrentPath != null && Vector2Int.Distance(_player.Pos, CurrentPath.Last().Pos) > 1)
-                return true;
-
-            // Regular recalculation interval
-            if (!ReachedTarget() && Time.time - _lastPathCalcTime > _pathRecalcCooldown)
-                return true;
-
-            // Monster is stuck
-            if (!ReachedTarget() && _isFollowingPath && _rb.velocity.magnitude < 0.1f && Time.time - _lastPathCalcTime > 0.2f)
-                return true;
-        }
-
-        return false;
-    }
-
-    public bool ShouldUpdateWanderTarget()
-    {
-        return Time.time - _currentWanderCooldown > _lastWanderTargetChange;
-    }
-
-    public void UpdateWanderTargetTime()
-    {
-        _lastWanderTargetChange = Time.time;
-        _currentWanderCooldown = _wanderChangeTargetCooldown.Random();
-    }
-
-    public List<Vector2Int> GetWanderTargets()
-    {
-        var freeCells = _worldManager.GetFreeCellsInCircle(GridPos, _wanderSearchNodeRadius);
-
-        if (freeCells != null && freeCells.Count > 0)
-        {
-            return freeCells.Where(x => _nodes.ContainsKey(x)).ToList();
-        }
-
-        return new List<Vector2Int>();
-    }
-
     private void OnDrawGizmosSelected()
     {
+        foreach(var node in _nodes)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(node.Key.ToVector3(offset:.5f), .2f);
+        }
+
         if (CurrentPath != null && CurrentPath.Count > 0)
         {
             Gizmos.color = Color.white;
@@ -519,10 +313,10 @@ public class AtikiMonster : Monster
         }
 
         // Draw the current target
-        if (CurrentTargetNode != null)
+        if (currentGoal != null)
         {
             Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(CurrentTargetNode.Pos.ToVector3(offset: .5f), .3f);
+            Gizmos.DrawWireSphere(currentGoal, .3f);
         }
 
         // Draw ground check rays

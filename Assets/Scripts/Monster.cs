@@ -31,17 +31,9 @@ public abstract class Monster : Entity, IChunkObject
     public float JumpStartTime { get; protected set; }
 
     #region Path
-    [SerializeField] private float _pathNodeReachDistance = 0.5f;
-    public float PathNodeReachDistance => _pathNodeReachDistance;
     public Dictionary<Vector2Int, PathNode> _nodes { set; get; } = new();
     public Dictionary<Vector2Int, PathNode> _edges { set; get; } = new();
-    protected float _pathRecalcCooldown = 0.5f;
-    protected float _lastPathCalcTime = 0f;
-    protected Vector2Int _currentTargetPos = Vector2Int.zero;
     public Queue<PathNode> CurrentPath { get; protected set; }
-    public PathNode CurrentTargetNode { get; protected set; }
-    public int CurrentPathIndex { get; protected set; }
-    protected bool _isFollowingPath;
     public int FallSearchLimit { private set; get; } = 7;
     public int JumpSearchRadius { private set; get; } = 5;
 
@@ -102,7 +94,6 @@ public abstract class Monster : Entity, IChunkObject
     }
 
     public abstract bool IsGrounded();
-    public abstract bool ShouldRecalculatePath();
 
     public override void OnTakeDamage(DamageSource sourceType)
     {
@@ -112,14 +103,15 @@ public abstract class Monster : Entity, IChunkObject
 
     private void Flip()
     {
-        Vector3 localScale;
-        if (_currentTargetPos.x > transform.position.x)
+        if (!_grounded) return;
+        Vector3 localScale = transform.localScale;
+        if (_rb.velocity.x > .1)
         {
             localScale = transform.localScale;
             localScale.x = 1;
             _isFacingRight = true;
         }
-        else
+        else if (_rb.velocity.x < -.1)
         {
             localScale = transform.localScale;
             localScale.x = -1;
@@ -129,44 +121,10 @@ public abstract class Monster : Entity, IChunkObject
         transform.localScale = localScale;
     }
 
-    public void SetCurrentTargetNode(PathNode node)
-    {
-        CurrentTargetNode = node;
-    }
-
-    public void UpdatePathCalculationTime()
-    {
-        _lastPathCalcTime = Time.time;
-    }
-
     public override void OnDie()
     {
         base.OnDie();
         Destroy(gameObject);
-    }
-
-    public void IncrementPathIndex()
-    {
-        CurrentPathIndex++;
-    }
-
-    public bool ReachedTarget()
-    {
-        if (CurrentPath == null || CurrentPath.Count == 0)
-            return true;
-
-        PathNode finalTargetNode = CurrentPath.Last();
-        float distanceToFinalTarget = Vector2.Distance(
-            transform.position,
-            finalTargetNode.Pos + Vector2.one * 0.5f
-        );
-
-        return distanceToFinalTarget < PathNodeReachDistance;
-    }
-
-    public void SetTargetPosition(Vector2Int targetPos)
-    {
-        _currentTargetPos = targetPos;
     }
 
     private PathNode GetClosestNode(Vector2Int pos)
@@ -205,33 +163,42 @@ public abstract class Monster : Entity, IChunkObject
         }
     }
 
-    public bool FindPath()
+    public bool FindPath(Vector2Int target)
     {
-        if (_currentTargetPos == Vector2.zero) return false;
         PathNode startNode = _nodes.ContainsKey(GridPos) ? _nodes[GridPos] : GetClosestNode(GridPos);
-
-        Vector2Int targetPosInt = _currentTargetPos;
-        PathNode goal = _nodes.ContainsKey(targetPosInt) ? _nodes[targetPosInt] : GetClosestNode(targetPosInt);
+        PathNode goal = _nodes.ContainsKey(target) ? _nodes[target] : GetClosestNode(target);
 
         if (startNode != null && goal != null)
         {
             CurrentPath = Pathfinder.AStar(startNode, goal, _nodes);
             if (CurrentPath != null && CurrentPath.Count > 0)
             {
-                CurrentPathIndex = 0;
-                _isFollowingPath = true;
                 return true;
             }
             else
             {
-                _isFollowingPath = false;
                 return false;
             }
         }
         else
         {
-            _isFollowingPath = false;
             return false;
+        }
+    }
+
+    public Queue<PathNode> GetPath(Vector2Int target)
+    {
+        PathNode startNode = _nodes.ContainsKey(GridPos) ? _nodes[GridPos] : GetClosestNode(GridPos);
+        PathNode goal = _nodes.ContainsKey(target) ? _nodes[target] : GetClosestNode(target);
+
+        if (startNode != null && goal != null)
+        {
+            return Pathfinder.AStar(startNode, goal, _nodes);
+
+        }
+        else
+        {
+            return null;
         }
     }
 

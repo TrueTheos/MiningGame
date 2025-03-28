@@ -136,12 +136,12 @@ MonoBehaviour:
   _art: {fileID: 4320002883129286161}
   _maxHealth: 30
   CurrentHealth: 0
-  _damageOnCollision: 0
-  _damage: 0
+  _damageOnCollision: 1
+  _damage: 2
   _detectionLayer:
     serializedVersion: 2
     m_Bits: 2807
-  _pathNodeReachDistance: 0.5
+  GridPos: {x: 0, y: 0}
   _reachedTarget: 0
   _moveSpeed: 5
   _jumpPower: 24
@@ -152,8 +152,6 @@ MonoBehaviour:
     m_Bits: 64
   _targetDetectionRange: 15
   _enrageOtherMonstersRadius: 10
-  _wanderSearchNodeRadius: 7
-  _wanderChangeTargetCooldown: {x: 5, y: 10}
 --- !u!50 &1686755206888159584
 Rigidbody2D:
   serializedVersion: 4
